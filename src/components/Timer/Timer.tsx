@@ -35,7 +35,7 @@ export const Timer = ({
     Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, timeRemaining),
   );
 
-  const [soundPlayed, setSoundPlayed] = useState<boolean>(false);
+  const [soundPlayed, setSoundPlayed] = useState<boolean>(timeRemaining > 0 ? false : true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -66,7 +66,12 @@ export const Timer = ({
   return (
     <>
       <audio ref={audioRef} src={FinishSound} />
-      <div className={clsx('timer-container', { 'view-mode': mode === RoomAccess.VIEW_ONLY })}>
+      <div
+        className={clsx('timer-container', {
+          overtime: timeRemaining < 0,
+          'view-mode': mode === RoomAccess.VIEW_ONLY,
+        })}
+      >
         <h2 className="timer-details-name">{eventName}</h2>
         <p className="timer-details-round">
           {currentRoundNumber === 0 ? 'Draft Time' : `Round ${currentRoundNumber}/${rounds}`}
@@ -151,13 +156,7 @@ export const Timer = ({
           </div>
         )}
 
-        <p
-          className={clsx('timer-details-time', {
-            overtime: timeRemaining < -1 * 1000,
-          })}
-        >
-          {formatTime(timeRemaining)}
-        </p>
+        <p className="timer-details-time">{formatTime(timeRemaining)}</p>
         <p className="event-finish-time">Finish: {formatTimestampToTime(eventFinishTime)}</p>
       </div>
     </>

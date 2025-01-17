@@ -113,7 +113,7 @@ button {
   font-weight: 500;
   font-family: inherit;
   color: var(--text);
-  transition: all 0.35 ease-in-out;
+  transition: all 0.35s ease-in-out;
   background-color: var(--surface0);
   background-size: 150% 100%;
   color: var(--text);
@@ -122,22 +122,18 @@ button {
   cursor: pointer;
 
   &:hover,
-  &:focus {
+  &:focus-visible {
     background-color: var(--surface1);
     background-position: top right;
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--blue);
+  &:disabled {
+    /* pointer-events: none; */
+    color: var(--surface2);
   }
 
-  &:disabled {
-    color: var(--surface2);
-
-    &:hover,
-    &:focus {
-      background-position: top left;
-    }
+  &:focus-visible {
+    outline: 2px solid var(--blue);
   }
 }
 

@@ -3,10 +3,11 @@
   height: 11rem;
   background-color: var(--mantle);
   border-radius: 0.5rem;
-  border: 1px solid rgb(from var(--mauve) r g b / 0.5);
+  border: 1px solid rgb(from var(--mauve) r g b / 1);
   box-shadow:
     0 20px 25px -5px rgb(from var(--red) r g b / 0.1),
     0 8px 10px -6px rgb(from var(--red) r g b / 0.1);
+  transition: all 1s ease-in-out;
   overflow: hidden;
   padding: 1rem;
 
@@ -36,6 +37,17 @@
     }
   }
 
+  &.overtime {
+    border: 1px solid rgb(from var(--red) r g b / 1);
+    box-shadow:
+      0 20px 25px -5px rgb(from var(--peach) r g b / 0.1),
+      0 8px 10px -6px rgb(from var(--peach) r g b / 0.1);
+
+    .timer-details-time {
+      color: var(--red);
+    }
+  }
+
   .timer-details-name {
     grid-area: name;
 
@@ -62,10 +74,6 @@
     align-items: center;
 
     font-size: 3rem;
-
-    &.overtime {
-      color: var(--red);
-    }
   }
 
   .timer-button-container {
