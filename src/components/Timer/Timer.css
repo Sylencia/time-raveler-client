@@ -81,15 +81,26 @@
   .start-button {
     background-color: var(--green);
     background-image: var(--green-gradient);
-    background-size: 150% 100%;
     color: var(--inverted-text);
+    min-width: 5rem;
   }
 
   .pause-button {
     background-color: var(--yellow);
     background-image: var(--yellow-gradient);
-    background-size: 150% 100%;
     color: var(--inverted-text);
+    min-width: 5rem;
+  }
+
+  .end-button {
+    background-color: var(--red);
+    background-image: var(--red-gradient);
+    color: var(--inverted-text);
+    min-width: 7.5rem;
+  }
+
+  .next-round-button {
+    min-width: 7.5rem;
   }
 
   .event-finish-time {
@@ -127,7 +138,6 @@
     width: 100%;
     background-color: var(--red);
     background-image: var(--red-gradient);
-    background-size: 150% 100%;
     color: var(--inverted-text);
   }
 

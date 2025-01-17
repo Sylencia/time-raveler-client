@@ -18,6 +18,7 @@ export const AddTimer = ({ onAddTimer }: AddTimerProps) => {
   const [roundTime, setRoundTime] = useState<string>('');
   const [hasDraft, setHasDraft] = useState(false);
   const [draftTime, setDraftTime] = useState<string>('');
+  const formRef = useRef<HTMLFormElement>(null);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toggleDialog = () => {
@@ -47,6 +48,8 @@ export const AddTimer = ({ onAddTimer }: AddTimerProps) => {
     setHasDraft(false);
     setDraftTime('');
     toggleDialog();
+
+    formRef.current?.reset();
   };
 
   return (
@@ -56,7 +59,7 @@ export const AddTimer = ({ onAddTimer }: AddTimerProps) => {
       </button>
       <Dialog toggleDialog={toggleDialog} ref={dialogRef}>
         <h2 className="add-timer-title">Add New Timer</h2>
-        <form onSubmit={handleSubmit} className="add-timer-form">
+        <form ref={formRef} onSubmit={handleSubmit} className="add-timer-form">
           <div className="form-field">
             <label className="form-field-label" htmlFor="eventName">
               Event Name

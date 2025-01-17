@@ -41,7 +41,6 @@
   button {
     background-color: var(--peach);
     background-image: var(--peach-gradient);
-    background-size: 150% 100%;
     color: var(--inverted-text);
   }
 

@@ -1,4 +1,5 @@
 import { ExitIcon, EyeOpenIcon, Pencil1Icon } from '@radix-ui/react-icons';
+import logo from 'assets/logo.svg';
 import clsx from 'clsx';
 import { ExpandablePill } from 'components/ExpandablePill';
 import { useWebSocketContext } from 'components/WebSocketContext';
@@ -7,7 +8,6 @@ import { ReadyState } from 'react-use-websocket';
 import { useRoomStore } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
 import { formatTimestampToTime } from 'utils/timeUtils';
-import logo from '../../assets/logo.svg';
 import './Header.css';
 
 export const Header = () => {

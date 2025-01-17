@@ -29,14 +29,21 @@ export const Room = () => {
   const [timers, setTimers] = useState<Array<TimerData>>([]);
   const getRoomCode = useRoomStore((state) => state.getRoomCode);
   const mode = useRoomStore((state) => state.mode);
-
   useUpdateTick(1000);
 
   const { lastJsonMessage, sendJsonMessage } = useWebSocketContext();
 
   const handleRoomUpdate = useCallback(
     (data: RoomUpdateMessage) => {
-      setTimers(data.timers);
+      setTimers(
+        data.timers.map((timer) => {
+          if (timer.running) {
+            timer.timeRemaining = timer.endTime - Date.now();
+          }
+
+          return timer;
+        }),
+      );
     },
     [setTimers],
   );

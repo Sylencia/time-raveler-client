@@ -39,8 +39,8 @@
     gap: 0.5rem;
 
     .header-status-icon {
-      height: 0.5rem;
-      width: 0.5rem;
+      height: 0.75rem;
+      width: 0.75rem;
       border-radius: 100%;
 
       &.header-status-connecting {
