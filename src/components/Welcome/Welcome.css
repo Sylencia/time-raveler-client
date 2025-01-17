@@ -1,0 +1,57 @@
+.welcome {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+  height: 100%;
+  gap: 3rem;
+  padding: 0 0.125rem;
+
+  .welcome-heading {
+    font-size: 1.5rem;
+    text-align: center;
+
+    background-image: var(--text-gradient);
+    background-clip: text;
+    color: transparent;
+  }
+
+  .welcome-room-select {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .welcome-join-form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .room-input {
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    text-align: center;
+    caret-color: var(--rosewater);
+  }
+
+  button {
+    background-color: var(--peach);
+    background-image: var(--peach-gradient);
+    background-size: 150% 100%;
+    color: var(--inverted-text);
+  }
+
+  @media all and (min-width: 31em) {
+    .welcome-heading {
+      font-size: 3rem;
+    }
+
+    .welcome-room-select {
+      flex-direction: row;
+    }
+  }
+}

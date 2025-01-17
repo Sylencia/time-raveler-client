@@ -1,0 +1,14 @@
+body {
+  min-height: 100svh;
+  background-color: var(--base);
+  color: var(--text);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+
+  .app-content {
+    height: calc(100svh - 4rem);
+  }
+}

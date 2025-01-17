@@ -1,0 +1,91 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 4rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  .header-container {
+    margin: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--peach);
+  }
+
+  .header-title {
+    font-size: 1.5rem;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  .header-room-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header-connection-status {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+
+    .header-status-icon {
+      height: 0.5rem;
+      width: 0.5rem;
+      border-radius: 100%;
+
+      &.header-status-connecting {
+        background-color: var(--peach);
+      }
+
+      &.header-status-open {
+        background-color: var(--green);
+      }
+
+      &.header-status-closed {
+        background-color: var(--red);
+      }
+    }
+  }
+
+  .edit-pill,
+  .view-pill {
+    background-color: var(--mauve);
+    color: var(--inverted-text);
+
+    svg {
+      color: var(--inverted-text);
+    }
+  }
+
+  .leave-pill {
+    background-color: var(--red);
+    color: var(--inverted-text);
+
+    svg {
+      color: var(--inverted-text);
+    }
+  }
+
+  .current-time {
+    font-size: 2rem;
+    display: none;
+  }
+}
+
+@media all and (min-width: 37em) {
+  .header {
+    .current-time {
+      display: block;
+    }
+  }
+}

@@ -1,0 +1,19 @@
+.timer-stack {
+  display: flex;
+  flex-direction: column;
+  margin: 1rem;
+  gap: 1rem;
+}
+
+.no-timers-msg {
+  font-size: 2rem;
+
+  background-image: var(--peach-gradient);
+  background-clip: text;
+  color: transparent;
+
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
