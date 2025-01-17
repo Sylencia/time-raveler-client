@@ -6,26 +6,12 @@ import { useEffect, useState } from 'react';
 import { ReadyState } from 'react-use-websocket';
 import { useRoomStore } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
+import { formatTimestampToTime } from 'utils/timeUtils';
 import logo from '../../assets/logo.svg';
 import './Header.css';
 
-const getCurrentTimeString = (): string => {
-  const now = new Date();
-
-  let hours = now.getHours();
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-
-  const ampm = hours >= 12 ? 'pm' : 'am';
-
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-
-  const timeString = `${hours.toString().padStart(2, '0')}:${minutes}${ampm}`;
-  return timeString;
-};
-
 export const Header = () => {
-  const [currentTime, setCurrentTime] = useState<string>(getCurrentTimeString());
+  const [currentTime, setCurrentTime] = useState<string>(formatTimestampToTime(Date.now()));
 
   const { readyState, sendJsonMessage, lastJsonMessage, reconnect } = useWebSocketContext();
   const { editRoomId, viewOnlyRoomId, mode, getRoomCode, resetRoomStore } = useRoomStore();
@@ -51,7 +37,7 @@ export const Header = () => {
   }, [lastJsonMessage, resetRoomStore]);
 
   const onTimerTick = (): void => {
-    setCurrentTime(getCurrentTimeString());
+    setCurrentTime(formatTimestampToTime(Date.now()));
   };
 
   const readyStateText = {

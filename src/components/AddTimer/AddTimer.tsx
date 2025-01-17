@@ -25,7 +25,11 @@ export const AddTimer = ({ onAddTimer }: AddTimerProps) => {
       return;
     }
 
-    dialogRef.current.hasAttribute('open') ? dialogRef.current.close() : dialogRef.current.showModal();
+    if (dialogRef.current.hasAttribute('open')) {
+      dialogRef.current.close();
+    } else {
+      dialogRef.current.showModal();
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

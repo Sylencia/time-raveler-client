@@ -4,7 +4,7 @@ import { Popover } from 'react-tiny-popover';
 import { useRoomStore } from 'stores/useRoomStore';
 import type { TimerData } from 'types/CommonTypes';
 import { RoomAccess } from 'types/RoomTypes';
-import { formatTime } from 'utils/timeUtils';
+import { formatTime, formatTimestampToTime } from 'utils/timeUtils';
 import './Timer.css';
 
 interface TimerProps {
@@ -26,11 +26,14 @@ export const Timer = ({
   onUpdateEventName,
   timerData,
 }: TimerProps) => {
-  const { id, endTime, timeRemaining, running, eventName, rounds, currentRoundNumber, hasDraft } = timerData;
+  const { id, endTime, timeRemaining, running, eventName, rounds, currentRoundNumber, hasDraft, roundTime } = timerData;
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const mode = useRoomStore((state) => state.mode);
   const [localEventName, setLocalEventName] = useState(eventName);
   const [localTimeRemaining, setLocalTimeRemaining] = useState(running ? endTime - Date.now() : timeRemaining);
+  const [eventFinishTime, setEventFinishTime] = useState<number>(
+    Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, localTimeRemaining),
+  );
 
   useEffect(() => {
     window.addEventListener('timerTick', onTimerTick);
@@ -42,7 +45,9 @@ export const Timer = ({
     if (running) {
       setLocalTimeRemaining(endTime - Date.now());
     }
-  }, [endTime, running]);
+
+    setEventFinishTime(Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, localTimeRemaining));
+  }, [endTime, running, localTimeRemaining, rounds, currentRoundNumber, roundTime]);
 
   const handleEventNameUpdate = (e: React.FocusEvent<HTMLInputElement, Element>) => {
     const newName = e.target.value;
@@ -131,6 +136,7 @@ export const Timer = ({
       )}
 
       <p className="timer-details-time">{formatTime(localTimeRemaining)}</p>
+      <p className="event-finish-time">Finish: {formatTimestampToTime(eventFinishTime)}</p>
     </div>
   );
 };
