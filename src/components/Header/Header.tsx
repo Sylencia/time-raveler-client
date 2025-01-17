@@ -1,8 +1,9 @@
 import { ExitIcon, EyeOpenIcon, Pencil1Icon } from '@radix-ui/react-icons';
 import clsx from 'clsx';
 import { ExpandablePill } from 'components/ExpandablePill';
+import { useWebSocketContext } from 'components/WebSocketContext';
 import { useEffect, useState } from 'react';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { ReadyState } from 'react-use-websocket';
 import { useRoomStore } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
 import logo from '../../assets/logo.svg';
@@ -25,45 +26,8 @@ const getCurrentTimeString = (): string => {
 
 export const Header = () => {
   const [currentTime, setCurrentTime] = useState<string>(getCurrentTimeString());
-  const [connectToWS, setConnectToWS] = useState<boolean>(true);
 
-  const { readyState, sendJsonMessage } = useWebSocket(
-    import.meta.env.VITE_WS_URL!,
-    {
-      share: true,
-      shouldReconnect: () => true,
-      reconnectInterval: (attemptNumber) => Math.min(Math.pow(2, attemptNumber) * 1000, 10000),
-      onMessage: (message) => {
-        const messageData: string = message.data;
-
-        try {
-          const data = JSON.parse(messageData);
-
-          if (data.type === 'unsubscribeSuccess') {
-            resetRoomStore();
-          }
-
-          switch (data.type) {
-            case 'roomInfo':
-              break;
-            case 'roomUpdate':
-              break;
-            case 'unsubscribeSuccess':
-              resetRoomStore();
-              break;
-            case 'roomValidity':
-              break;
-            default:
-              console.warn('Unknown message type', data);
-          }
-        } catch (e) {
-          console.error('Error parsing message', e);
-        }
-      },
-    },
-    connectToWS,
-  );
-
+  const { readyState, sendJsonMessage, lastJsonMessage, reconnect } = useWebSocketContext();
   const { editRoomId, viewOnlyRoomId, mode, getRoomCode, resetRoomStore } = useRoomStore();
 
   useEffect(() => {
@@ -71,6 +35,20 @@ export const Header = () => {
 
     return () => window.removeEventListener('timerTick', onTimerTick);
   });
+
+  useEffect(() => {
+    if (!lastJsonMessage) {
+      return;
+    }
+
+    switch (lastJsonMessage.type) {
+      case 'unsubscribeSuccess':
+        resetRoomStore();
+        break;
+      default:
+        return;
+    }
+  }, [lastJsonMessage, resetRoomStore]);
 
   const onTimerTick = (): void => {
     setCurrentTime(getCurrentTimeString());
@@ -91,15 +69,6 @@ export const Header = () => {
     });
   };
 
-  const handleAttemptReconnect = () => {
-    if (readyState !== ReadyState.OPEN) {
-      setConnectToWS(false);
-      setTimeout(() => {
-        setConnectToWS(true);
-      }, 100);
-    }
-  };
-
   return (
     <header className={'header'}>
       <div className="header-container">
@@ -115,7 +84,7 @@ export const Header = () => {
             </div>
           )}
         </div>
-        <div className="header-connection-status" onClick={handleAttemptReconnect}>
+        <div className="header-connection-status" onClick={reconnect}>
           <div
             className={clsx('header-status-icon', {
               'header-status-connecting': readyState === ReadyState.CONNECTING,

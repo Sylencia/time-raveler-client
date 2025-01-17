@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { useCallback, useEffect, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { useRoomStore } from 'stores/useRoomStore';
-import type { TimerData } from 'types/ClientMessageTypes';
+import type { TimerData } from 'types/CommonTypes';
 import { RoomAccess } from 'types/RoomTypes';
 import { formatTime } from 'utils/timeUtils';
 import './Timer.css';
@@ -42,7 +42,7 @@ export const Timer = ({
     if (running) {
       setLocalTimeRemaining(endTime - Date.now());
     }
-  }, [timerData]);
+  }, [endTime, running]);
 
   const handleEventNameUpdate = (e: React.FocusEvent<HTMLInputElement, Element>) => {
     const newName = e.target.value;

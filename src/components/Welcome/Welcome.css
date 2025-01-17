@@ -45,6 +45,10 @@
     color: var(--inverted-text);
   }
 
+  .error-message {
+    position: absolute;
+  }
+
   @media all and (min-width: 31em) {
     .welcome-heading {
       font-size: 3rem;

@@ -1,10 +1,13 @@
 import { AddTimer } from 'components/AddTimer';
 import { Timer } from 'components/Timer';
+import { useWebSocketContext } from 'components/WebSocketContext';
 import { useUpdateTick } from 'hooks/useUpdateTick';
-import { useEffect, useRef, useState } from 'react';
-import useWebSocket from 'react-use-websocket';
+import { useCallback, useEffect, useState } from 'react';
 import { useRoomStore } from 'stores/useRoomStore';
-import { RoomAccess, type CreateTimerMessage, type DeleteTimerMessage, type TimerData } from 'types/ClientMessageTypes';
+import { type CreateTimerMessage, type DeleteTimerMessage } from 'types/ClientMessageTypes';
+import type { TimerData } from 'types/CommonTypes';
+import { RoomAccess } from 'types/RoomTypes';
+import { RoomUpdateMessage } from 'types/ServerMessageTypes';
 import { generateRandomId } from 'utils/generateRandomId';
 import { convertMinutesToMilliseconds } from 'utils/timeUtils';
 import './Room.css';
@@ -18,37 +21,34 @@ interface AddTimerInfo {
 }
 
 export const Room = () => {
-  const didUnmount = useRef(false);
   const [timers, setTimers] = useState<Array<TimerData>>([]);
   const getRoomCode = useRoomStore((state) => state.getRoomCode);
   const mode = useRoomStore((state) => state.mode);
 
   useUpdateTick(1000);
 
-  const { sendJsonMessage } = useWebSocket(import.meta.env.VITE_WS_URL!, {
-    share: true,
-    shouldReconnect: () => didUnmount.current === false,
-    reconnectInterval: (attemptNumber) => Math.min(Math.pow(2, attemptNumber) * 1000, 10000),
-    onMessage: (message) => {
-      const messageData: string = message.data;
+  const { lastJsonMessage, sendJsonMessage } = useWebSocketContext();
 
-      try {
-        const data = JSON.parse(messageData);
-
-        if (data.type === 'roomUpdate') {
-          handleRoomUpdate(data.timers);
-        }
-      } catch (e) {
-        console.error('Error parsing message', e);
-      }
+  const handleRoomUpdate = useCallback(
+    (data: RoomUpdateMessage) => {
+      setTimers(data.timers);
     },
-  });
+    [setTimers],
+  );
 
   useEffect(() => {
-    return () => {
-      didUnmount.current = true;
-    };
-  }, []);
+    if (!lastJsonMessage) {
+      return;
+    }
+
+    switch (lastJsonMessage.type) {
+      case 'roomUpdate':
+        handleRoomUpdate(lastJsonMessage);
+        break;
+      default:
+        return;
+    }
+  }, [lastJsonMessage, handleRoomUpdate]);
 
   // Timer Handlers
 
@@ -74,10 +74,6 @@ export const Room = () => {
         currentRoundLength: timeRemaining,
       },
     } as CreateTimerMessage);
-  };
-
-  const handleRoomUpdate = (timers: Array<TimerData>) => {
-    setTimers(timers);
   };
 
   const handleUpdateTimer = (timer: TimerData) => {

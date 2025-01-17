@@ -22,10 +22,10 @@ export const ExpandablePill = ({ onClick, icon, text, className }: ExpandablePil
 
   const showContent = useMemo(() => isFocused.hover || isFocused.focus, [isFocused]);
 
-  const handleOnClick = () => {
+  const handleOnClick = (shouldCopy: boolean = true) => {
     if (onClick) {
       onClick();
-    } else {
+    } else if (shouldCopy) {
       navigator.clipboard.writeText(text);
     }
   };
@@ -33,14 +33,15 @@ export const ExpandablePill = ({ onClick, icon, text, className }: ExpandablePil
   return (
     <button
       className={clsx(className, 'expandable-pill')}
-      onClick={handleOnClick}
+      onClick={() => handleOnClick(true)}
       onTouchStart={(e) => {
         e.preventDefault();
-        handleOnClick();
+        handleOnClick(false);
+        setIsFocused((prev: PillActiveStates) => ({ ...prev, hover: true }));
       }}
       onTouchEnd={(e) => {
         e.preventDefault();
-        setIsFocused((prev: PillActiveStates) => ({ ...prev, clicked: false }));
+        setIsFocused((prev: PillActiveStates) => ({ ...prev, hover: false }));
       }}
       onMouseEnter={() => setIsFocused((prev: PillActiveStates) => ({ ...prev, hover: true }))}
       onFocus={() => setIsFocused((prev: PillActiveStates) => ({ ...prev, focus: true }))}

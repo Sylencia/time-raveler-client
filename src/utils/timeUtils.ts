@@ -3,8 +3,8 @@ export const convertMinutesToMilliseconds = (minutes: number) => {
 };
 
 export const formatTime = (milliseconds: number): string => {
-  const sign = milliseconds < 0 ? '-' : '';
   const seconds = Math.round(milliseconds / 1000);
+  const sign = seconds < 0 ? '-' : '';
   const absSeconds = Math.abs(seconds);
   const hours = Math.floor(absSeconds / 3600);
   const minutes = Math.floor((absSeconds % 3600) / 60);

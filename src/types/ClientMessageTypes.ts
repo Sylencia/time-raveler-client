@@ -1,5 +1,4 @@
-export * from './RoomTypes';
-export * from './ServerMessageTypes';
+import { TimerData } from './CommonTypes';
 export interface CreateRoomMessage {
   type: 'createRoom';
 }
@@ -45,17 +44,3 @@ export type ClientMessage =
   | DeleteTimerMessage
   | UpdateTimerMessage
   | RoomCheckMessage;
-
-export type TimerData = {
-  id: string;
-  endTime: number;
-  timeRemaining: number;
-  running: boolean;
-  eventName: string;
-  rounds: number;
-  roundTime: number;
-  hasDraft: boolean;
-  draftTime: number;
-  currentRoundNumber: number;
-  currentRoundLength: number;
-};
