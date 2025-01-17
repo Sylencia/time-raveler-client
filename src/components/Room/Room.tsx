@@ -7,7 +7,12 @@ import { useRoomStore } from 'stores/useRoomStore';
 import { type CreateTimerMessage, type DeleteTimerMessage } from 'types/ClientMessageTypes';
 import type { TimerData } from 'types/CommonTypes';
 import { RoomAccess } from 'types/RoomTypes';
-import { RoomUpdateMessage } from 'types/ServerMessageTypes';
+import {
+  RoomUpdateMessage,
+  TimerCreatedMessage,
+  TimerDeletedMessage,
+  TimerUpdateMessage,
+} from 'types/ServerMessageTypes';
 import { generateRandomId } from 'utils/generateRandomId';
 import { convertMinutesToMilliseconds } from 'utils/timeUtils';
 import './Room.css';
@@ -36,6 +41,18 @@ export const Room = () => {
     [setTimers],
   );
 
+  const handleTimerUpdate = useCallback((data: TimerUpdateMessage) => {
+    setTimers((prevTimers) => prevTimers.map((timer) => (timer.id === data.timer.id ? data.timer : timer)));
+  }, []);
+
+  const handleTimerCreated = useCallback((data: TimerCreatedMessage) => {
+    setTimers((prevTimers) => [...prevTimers, data.timer]);
+  }, []);
+
+  const handleTimerDeleted = useCallback((data: TimerDeletedMessage) => {
+    setTimers((prevTimers) => prevTimers.filter((timer) => timer.id !== data.id));
+  }, []);
+
   useEffect(() => {
     if (!lastJsonMessage) {
       return;
@@ -45,13 +62,38 @@ export const Room = () => {
       case 'roomUpdate':
         handleRoomUpdate(lastJsonMessage);
         break;
+      case 'timerUpdate':
+        handleTimerUpdate(lastJsonMessage);
+        break;
+      case 'timerCreated':
+        handleTimerCreated(lastJsonMessage);
+        break;
+      case 'timerDeleted':
+        handleTimerDeleted(lastJsonMessage);
+        break;
       default:
         return;
     }
-  }, [lastJsonMessage, handleRoomUpdate]);
+  }, [lastJsonMessage, handleRoomUpdate, handleTimerUpdate, handleTimerCreated, handleTimerDeleted]);
+
+  useEffect(() => {
+    window.addEventListener('timerTick', onTimerTick);
+
+    return () => window.removeEventListener('timerTick', onTimerTick);
+  });
+
+  const onTimerTick = () => {
+    setTimers((prevTimers) =>
+      prevTimers.map((timer) => {
+        if (timer.running) {
+          return { ...timer, timeRemaining: timer.endTime - Date.now() };
+        }
+        return timer;
+      }),
+    );
+  };
 
   // Timer Handlers
-
   const handleAddTimer = ({ eventName, rounds, roundTime, hasDraft, draftTime }: AddTimerInfo) => {
     const convertedDraftTime = convertMinutesToMilliseconds(draftTime ?? 0);
     const convertedRoundTime = convertMinutesToMilliseconds(roundTime);
@@ -61,7 +103,7 @@ export const Room = () => {
       type: 'createTimer',
       accessId: getRoomCode(),
       timer: {
-        id: generateRandomId(),
+        id: generateRandomId(10),
         endTime: Date.now() + timeRemaining,
         timeRemaining,
         running: false,
@@ -150,7 +192,7 @@ export const Room = () => {
       const newRoundNumber =
         direction === 'next'
           ? Math.min(timer.rounds, timer.currentRoundNumber + 1)
-          : Math.max(1, timer.currentRoundNumber - 1);
+          : Math.max(timer.hasDraft ? 0 : 1, timer.currentRoundNumber - 1);
       const newTimer = { ...timer, currentRoundNumber: newRoundNumber, timeRemaining: timer.roundTime, running: false };
 
       setTimers(timers.map((t) => (t.id === id ? newTimer : t)));
@@ -159,7 +201,6 @@ export const Room = () => {
     }
   };
 
-  // TODO: Debounce this as it can change fast
   const handleUpdateEventName = (id: string, eventName: string) => {
     const timer = timers.find((timer) => timer.id === id);
 

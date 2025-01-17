@@ -20,6 +20,21 @@ export interface ErrorMessage {
   message: string;
 }
 
+export interface TimerUpdateMessage {
+  type: 'timerUpdate';
+  timer: TimerData;
+}
+
+export interface TimerCreatedMessage {
+  type: 'timerCreated';
+  timer: TimerData;
+}
+
+export interface TimerDeletedMessage {
+  type: 'timerDeleted';
+  id: string;
+}
+
 export interface ViewOnlyRoomInfoMessage {
   type: 'roomInfo';
   accessLevel: RoomMode;
@@ -36,4 +51,7 @@ export type ServerMessageTypes =
   | RoomValidityMessage
   | RoomInfoMessage
   | RoomUpdateMessage
+  | TimerUpdateMessage
+  | TimerDeletedMessage
+  | TimerCreatedMessage
   | ErrorMessage;

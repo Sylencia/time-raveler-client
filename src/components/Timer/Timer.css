@@ -62,6 +62,10 @@
     align-items: center;
 
     font-size: 3rem;
+
+    &.overtime {
+      color: var(--red);
+    }
   }
 
   .timer-button-container {

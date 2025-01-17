@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { useRoomStore } from 'stores/useRoomStore';
 import type { TimerData } from 'types/CommonTypes';
@@ -26,28 +26,17 @@ export const Timer = ({
   onUpdateEventName,
   timerData,
 }: TimerProps) => {
-  const { id, endTime, timeRemaining, running, eventName, rounds, currentRoundNumber, hasDraft, roundTime } = timerData;
+  const { id, timeRemaining, running, eventName, rounds, currentRoundNumber, hasDraft, roundTime } = timerData;
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const mode = useRoomStore((state) => state.mode);
   const [localEventName, setLocalEventName] = useState(eventName);
-  const [localTimeRemaining, setLocalTimeRemaining] = useState(running ? endTime - Date.now() : timeRemaining);
   const [eventFinishTime, setEventFinishTime] = useState<number>(
-    Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, localTimeRemaining),
+    Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, timeRemaining),
   );
 
   useEffect(() => {
-    window.addEventListener('timerTick', onTimerTick);
-
-    return () => window.removeEventListener('timerTick', onTimerTick);
-  });
-
-  const onTimerTick = useCallback(() => {
-    if (running) {
-      setLocalTimeRemaining(endTime - Date.now());
-    }
-
-    setEventFinishTime(Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, localTimeRemaining));
-  }, [endTime, running, localTimeRemaining, rounds, currentRoundNumber, roundTime]);
+    setEventFinishTime(Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, timeRemaining));
+  }, [rounds, currentRoundNumber, roundTime, timeRemaining]);
 
   const handleEventNameUpdate = (e: React.FocusEvent<HTMLInputElement, Element>) => {
     const newName = e.target.value;
@@ -135,7 +124,13 @@ export const Timer = ({
         </div>
       )}
 
-      <p className="timer-details-time">{formatTime(localTimeRemaining)}</p>
+      <p
+        className={clsx('timer-details-time', {
+          overtime: timeRemaining < -1 * 1000,
+        })}
+      >
+        {formatTime(timeRemaining)}
+      </p>
       <p className="event-finish-time">Finish: {formatTimestampToTime(eventFinishTime)}</p>
     </div>
   );
