@@ -105,7 +105,7 @@ export const Welcome = () => {
             value={roomCodeInput}
             placeholder="Code"
             pattern="[a-zA-Z0-9]{4}"
-            size={4}
+            size={6}
             minLength={4}
             maxLength={4}
             title="Room codes are 4 letters long"
