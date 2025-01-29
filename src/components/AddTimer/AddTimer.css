@@ -49,7 +49,6 @@
     width: 100%;
     background-color: var(--green);
     background-image: var(--teal-gradient);
-    background-size: 150% 100%;
     font-weight: 600;
     color: var(--inverted-text);
   }
