@@ -1,65 +1,152 @@
 import FinishSound from 'assets/finish.mp3';
 import clsx from 'clsx';
+import { supabase } from 'lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
-import { useRoomStore } from 'stores/useRoomStore';
-import type { TimerData } from 'types/CommonTypes';
+import { useRoomMode } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
+import { Database } from 'types/supabase';
 import { formatTime, formatTimestampToTime } from 'utils/timeUtils';
 import './Timer.css';
 
+type TimerData = Database['public']['Tables']['timers']['Row'];
+
 interface TimerProps {
   timerData: TimerData;
-  onRemoveTimer: (id: string) => void;
-  onToggleTimer: (id: string) => void;
-  onAdjustTime: (id: string, amount: number) => void;
-  onAdjustRounds: (id: string, amount: number) => void;
-  onChangeRound: (id: string, direction: 'next' | 'previous') => void;
-  onUpdateEventName: (id: string, eventName: string) => void;
 }
 
-export const Timer = ({
-  onRemoveTimer,
-  onToggleTimer,
-  onAdjustTime,
-  onAdjustRounds,
-  onChangeRound,
-  onUpdateEventName,
-  timerData,
-}: TimerProps) => {
-  const { id, timeRemaining, running, eventName, rounds, currentRoundNumber, hasDraft, roundTime } = timerData;
+export const Timer = ({ timerData }: TimerProps) => {
+  const { id, end_time, time_remaining, is_running, event_name, rounds, current_round_number, has_draft, round_time } =
+    timerData;
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const mode = useRoomStore((state) => state.mode);
-  const [localEventName, setLocalEventName] = useState(eventName);
+  const mode = useRoomMode();
+  const [localEventName, setLocalEventName] = useState(event_name);
   const [eventFinishTime, setEventFinishTime] = useState<number>(
-    Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, timeRemaining),
+    Date.now() + (rounds - current_round_number) * round_time + Math.max(0, time_remaining),
+  );
+  const [roundTimeRemaining, setRoundTimeRemaining] = useState(
+    is_running ? new Date(end_time).getTime() - Date.now() : time_remaining,
   );
 
-  const [soundPlayed, setSoundPlayed] = useState<boolean>(timeRemaining > 0 ? false : true);
+  useEffect(() => {
+    window.addEventListener('timerTick', onTimerTick);
+
+    return () => window.removeEventListener('timerTick', onTimerTick);
+  });
+
+  const onTimerTick = () => {
+    if (is_running) {
+      setRoundTimeRemaining(new Date(end_time).getTime() - Date.now());
+    } else {
+      setRoundTimeRemaining(time_remaining);
+    }
+
+    setEventFinishTime(Date.now() + (rounds - current_round_number) * round_time + Math.max(0, roundTimeRemaining));
+  };
+
+  const [soundPlayed, setSoundPlayed] = useState<boolean>(time_remaining > 0 ? false : true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (timeRemaining <= 0 && !soundPlayed) {
+    if (time_remaining <= 0 && !soundPlayed) {
       setSoundPlayed(true);
       audioRef.current?.play();
     }
 
     // Reset the sound played if we go back above 0s remaining
-    if (timeRemaining > 0 && soundPlayed) {
+    if (time_remaining > 0 && soundPlayed) {
       setSoundPlayed(false);
     }
-  }, [timeRemaining, audioRef, soundPlayed]);
+  }, [time_remaining, audioRef, soundPlayed]);
 
-  useEffect(() => {
-    setEventFinishTime(Date.now() + (rounds - currentRoundNumber) * roundTime + Math.max(0, timeRemaining));
-  }, [rounds, currentRoundNumber, roundTime, timeRemaining]);
-
-  const handleEventNameUpdate = (e: React.FocusEvent<HTMLInputElement, Element>) => {
+  const handleEventNameUpdate = async (e: React.FocusEvent<HTMLInputElement, Element>) => {
     const newName = e.target.value;
     if (newName === '') {
-      setLocalEventName(eventName);
+      setLocalEventName(event_name);
+      return;
     } else {
-      onUpdateEventName(id, newName);
+      const { error } = await supabase.rpc('change_event_name', { _timer_id: id, _name: newName });
+
+      if (error) {
+        console.error(error.message);
+      }
+    }
+  };
+
+  const handleStartTimer = async () => {
+    const { error } = await supabase.rpc('start_timer', { _timer_id: id });
+
+    if (error) {
+      console.error('Failed to start timer:', error.message);
+    }
+  };
+
+  const handlePauseTimer = async () => {
+    const { error } = await supabase.rpc('pause_timer', { _timer_id: id });
+
+    if (error) {
+      console.error('Failed to pause timer:', error.message);
+    }
+  };
+
+  const handleDeleteTimer = async () => {
+    const { error } = await supabase.rpc('delete_timer', {
+      _timer_id: id,
+    });
+
+    if (error) {
+      console.error(error.message);
+    }
+  };
+
+  const handleNextRound = async () => {
+    const { error } = await supabase.rpc('next_round', {
+      _timer_id: id,
+    });
+
+    if (error) {
+      console.error(error.message);
+    }
+  };
+
+  const handleAdjustEndTime = async (adjustment: number) => {
+    const { error } = await supabase.rpc('update_end_time', {
+      _timer_id: id,
+      _time_modifier: adjustment,
+    });
+
+    if (error) {
+      console.error(error.message);
+    }
+  };
+
+  const handleRemoveRound = async () => {
+    const { error } = await supabase.rpc('remove_round', {
+      _timer_id: id,
+    });
+
+    if (error) {
+      console.error(error.message);
+    }
+  };
+
+  const handleAddRound = async () => {
+    const { error } = await supabase.rpc('add_round', {
+      _timer_id: id,
+    });
+
+    if (error) {
+      console.error(error.message);
+    }
+  };
+
+  const handlePreviousRound = async () => {
+    const { error } = await supabase.rpc('previous_round', {
+      _timer_id: id,
+    });
+
+    if (error) {
+      console.error(error.message);
     }
   };
 
@@ -68,33 +155,33 @@ export const Timer = ({
       <audio ref={audioRef} src={FinishSound} />
       <div
         className={clsx('timer-container', {
-          overtime: timeRemaining < 0,
+          overtime: time_remaining < 0,
           'view-mode': mode === RoomAccess.VIEW_ONLY,
         })}
       >
-        <h2 className="timer-details-name">{eventName}</h2>
+        <h2 className="timer-details-name">{event_name}</h2>
         <p className="timer-details-round">
-          {currentRoundNumber === 0 ? 'Draft Time' : `Round ${currentRoundNumber}/${rounds}`}
+          {current_round_number === 0 ? 'Draft Time' : `Round ${current_round_number}/${rounds}`}
         </p>
 
         {mode === RoomAccess.EDIT && (
           <div className="timer-button-container">
             <button
               className={clsx({
-                'pause-button': running,
-                'start-button': !running,
+                'pause-button': is_running,
+                'start-button': !is_running,
               })}
-              onClick={() => onToggleTimer(id)}
+              onClick={() => (is_running ? handlePauseTimer() : handleStartTimer())}
             >
-              {running ? 'Pause' : 'Start'}
+              {is_running ? 'Pause' : 'Start'}
             </button>
 
-            {currentRoundNumber === rounds ? (
-              <button onClick={() => onRemoveTimer(id)} className="end-button">
+            {current_round_number === rounds ? (
+              <button onClick={handleDeleteTimer} className="end-button">
                 End Event
               </button>
             ) : (
-              <button onClick={() => onChangeRound(id, 'next')} className="next-round-button">
+              <button onClick={handleNextRound} className="next-round-button">
                 Next Round
               </button>
             )}
@@ -109,41 +196,38 @@ export const Timer = ({
                   <input
                     className="timer-controls-name"
                     id="eventName"
-                    value={localEventName}
+                    value={localEventName?.toString()}
                     onChange={(e) => setLocalEventName(e.target.value)}
                     onBlur={handleEventNameUpdate}
                   />
 
                   <div className="timer-controls-grid-4">
-                    <button onClick={() => onAdjustTime(id, -5 * 60 * 1000)}>-5m</button>
-                    <button onClick={() => onAdjustTime(id, -1 * 60 * 1000)}>-1m</button>
-                    <button onClick={() => onAdjustTime(id, 1 * 60 * 1000)}>+1m</button>
-                    <button onClick={() => onAdjustTime(id, 5 * 60 * 1000)}>+5m</button>
+                    <button onClick={() => handleAdjustEndTime(-5 * 60 * 1000)}>-5m</button>
+                    <button onClick={() => handleAdjustEndTime(-1 * 60 * 1000)}>-1m</button>
+                    <button onClick={() => handleAdjustEndTime(1 * 60 * 1000)}>+1m</button>
+                    <button onClick={() => handleAdjustEndTime(5 * 60 * 1000)}>+5m</button>
                   </div>
 
                   <div className="timer-controls-grid-2">
-                    <button
-                      disabled={rounds <= 1 || currentRoundNumber === rounds}
-                      onClick={() => onAdjustRounds(id, -1)}
-                    >
+                    <button disabled={rounds <= 1 || current_round_number === rounds} onClick={handleRemoveRound}>
                       -1 Round
                     </button>
-                    <button onClick={() => onAdjustRounds(id, 1)}>+1 Round</button>
+                    <button onClick={handleAddRound}>+1 Round</button>
                   </div>
 
                   <div className="timer-controls-grid-2">
                     <button
-                      disabled={hasDraft ? currentRoundNumber === 0 : currentRoundNumber <= 1}
-                      onClick={() => onChangeRound(id, 'previous')}
+                      disabled={has_draft ? current_round_number === 0 : current_round_number <= 1}
+                      onClick={handlePreviousRound}
                     >
                       Prev Round
                     </button>
-                    <button disabled={currentRoundNumber === rounds} onClick={() => onChangeRound(id, 'next')}>
+                    <button disabled={current_round_number === rounds} onClick={handleNextRound}>
                       Next Round
                     </button>
                   </div>
 
-                  <button onClick={() => onRemoveTimer(id)} className="timer-controls-end-event">
+                  <button onClick={handleDeleteTimer} className="timer-controls-end-event">
                     End Event
                   </button>
                 </div>
@@ -156,7 +240,7 @@ export const Timer = ({
           </div>
         )}
 
-        <p className="timer-details-time">{formatTime(timeRemaining)}</p>
+        <p className="timer-details-time">{formatTime(roundTimeRemaining)}</p>
         <p className="event-finish-time">Finish: {formatTimestampToTime(eventFinishTime)}</p>
       </div>
     </>
