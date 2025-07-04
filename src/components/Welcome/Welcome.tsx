@@ -39,7 +39,7 @@ export const Welcome = () => {
     } else {
       const { read_code, access_level, room_id } = data[0];
       const mode = access_level === 'edit' ? RoomAccess.EDIT : RoomAccess.VIEW_ONLY;
-      if (access_level === 'view') {
+      if (access_level === 'edit') {
         updateEditRoomId(roomCodeInput.toUpperCase());
       }
 

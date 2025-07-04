@@ -155,6 +155,10 @@ export type Database = {
         Args: { _timer_id: string }
         Returns: undefined
       }
+      generate_code: {
+        Args: { length: number }
+        Returns: string
+      }
       join_room: {
         Args: { input_code: string }
         Returns: {
@@ -168,7 +172,7 @@ export type Database = {
         Returns: undefined
       }
       pause_timer: {
-        Args: { _timer_id: string }
+        Args: { _timer_id: string; _pause_time: string }
         Returns: undefined
       }
       ping: {
@@ -184,7 +188,7 @@ export type Database = {
         Returns: undefined
       }
       start_timer: {
-        Args: { _timer_id: string }
+        Args: { _timer_id: string; _start_time: string }
         Returns: undefined
       }
       update_end_time: {
