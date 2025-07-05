@@ -8,7 +8,7 @@ import './App.css';
 
 function App() {
   const mode = useRoomMode();
-  useUpdateTick(1000);
+  useUpdateTick();
 
   return (
     <div className="app">

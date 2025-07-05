@@ -31,7 +31,7 @@ export const Timer = ({ timerData }: TimerProps) => {
   } = timerData;
   const mode = useRoomMode();
   const roomId = useRoomId();
-  const { updateTimer, fetchTimers } = useTimerActions();
+  const { updateTimer, fetchTimers, deleteTimer } = useTimerActions();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [localEventName, setLocalEventName] = useState(event_name);
   const [eventFinishTime, setEventFinishTime] = useState<number>(
@@ -130,6 +130,9 @@ export const Timer = ({ timerData }: TimerProps) => {
   };
 
   const handleDeleteTimer = async () => {
+    // Optimistic update
+    deleteTimer(id);
+
     const { error } = await supabase.rpc('delete_timer', {
       _timer_id: id,
     });
@@ -163,6 +166,7 @@ export const Timer = ({ timerData }: TimerProps) => {
     const endTimeConverted = new Date(end_time).getTime();
     updateTimer(id, {
       end_time: new Date(endTimeConverted + adjustment).toISOString(),
+      time_remaining: time_remaining + adjustment,
     });
 
     const { error } = await supabase.rpc('update_end_time', {
@@ -235,7 +239,7 @@ export const Timer = ({ timerData }: TimerProps) => {
       <audio ref={audioRef} src={FinishSound} />
       <div
         className={clsx('timer-container', {
-          overtime: time_remaining < 0,
+          overtime: roundTimeRemaining < 0,
           'view-mode': mode === RoomAccess.VIEW_ONLY,
         })}
       >

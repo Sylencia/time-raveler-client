@@ -15,6 +15,7 @@ interface TimerActions {
   fetchTimers: (roomId: string) => void;
   setTimers: (fn: (prev: TimerData[]) => TimerData[]) => void;
   updateTimer: (id: string, update: Partial<TimerData>) => void;
+  deleteTimer: (id: string) => void;
   clearTimers: () => void;
 }
 
@@ -25,7 +26,7 @@ const useRoomTimersStore = create<TimerState>((set) => ({
   actions: {
     fetchTimers: async (roomId) => {
       set({ loading: true });
-      const { data, error } = await supabase.from('timers').select('*').eq('room_id', roomId);
+      const { data, error } = await supabase.from('timers').select('*').order('created_at').eq('room_id', roomId);
 
       if (error) {
         console.error('Failed to fetch timers:', error);
@@ -43,6 +44,12 @@ const useRoomTimersStore = create<TimerState>((set) => ({
     updateTimer: (id, update) => {
       set((state) => ({
         timers: state.timers.map((t) => (t.id === id ? { ...t, ...update } : t)),
+      }));
+    },
+
+    deleteTimer: (id) => {
+      set((state) => ({
+        timers: state.timers.filter((t) => t.id !== id),
       }));
     },
 
