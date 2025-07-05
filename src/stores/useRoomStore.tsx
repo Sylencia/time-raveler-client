@@ -36,7 +36,6 @@ const useRoomStore = create<RoomState>()(
     {
       name: 'room-store',
       partialize: (state) => ({
-        roomId: state.roomId,
         editRoomId: state.editRoomId,
         viewOnlyRoomId: state.viewOnlyRoomId,
       }),

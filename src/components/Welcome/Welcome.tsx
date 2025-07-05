@@ -1,12 +1,14 @@
 import { supabase } from 'lib/supabase';
 import { FormEvent, useState } from 'react';
-import { useRoomActions } from 'stores/useRoomStore';
+import { useEditRoomId, useRoomActions, useViewRoomId } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
 import './Welcome.css';
 
 export const Welcome = () => {
   const { updateRoomId, updateEditRoomId, updateViewRoomId, updateMode } = useRoomActions();
-  const [roomCodeInput, setRoomCodeInput] = useState<string>('');
+  const editRoomId = useEditRoomId();
+  const viewRoomId = useViewRoomId();
+  const [roomCodeInput, setRoomCodeInput] = useState<string>(editRoomId || viewRoomId || '');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleCreateNewRoom = async () => {
@@ -41,6 +43,8 @@ export const Welcome = () => {
       const mode = access_level === 'edit' ? RoomAccess.EDIT : RoomAccess.VIEW_ONLY;
       if (access_level === 'edit') {
         updateEditRoomId(roomCodeInput.toUpperCase());
+      } else {
+        updateEditRoomId('');
       }
 
       updateRoomId(room_id);
