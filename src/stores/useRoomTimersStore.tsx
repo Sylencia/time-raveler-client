@@ -13,8 +13,8 @@ interface TimerState {
 
 interface TimerActions {
   fetchTimers: (roomId: string) => void;
-  setTimers: (fn: (prev: TimerData[]) => TimerData[]) => void;
   updateTimer: (id: string, update: Partial<TimerData>) => void;
+  addTimer: (timer: TimerData) => void;
   deleteTimer: (id: string) => void;
   clearTimers: () => void;
 }
@@ -37,13 +37,15 @@ const useRoomTimersStore = create<TimerState>((set) => ({
       set({ timers: data, loading: false });
     },
 
-    setTimers: (fn) => {
-      set((state) => ({ timers: fn(state.timers) }));
-    },
-
     updateTimer: (id, update) => {
       set((state) => ({
         timers: state.timers.map((t) => (t.id === id ? { ...t, ...update } : t)),
+      }));
+    },
+
+    addTimer: (timer) => {
+      set((state) => ({
+        timers: [timer, ...state.timers],
       }));
     },
 

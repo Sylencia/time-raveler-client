@@ -3,10 +3,11 @@ import clsx from 'clsx';
 import { supabase } from 'lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
-import { useRoomId, useRoomMode } from 'stores/useRoomStore';
+import { useRoomMode } from 'stores/useRoomStore';
 import { useTimerActions } from 'stores/useRoomTimersStore';
 import { RoomAccess } from 'types/RoomTypes';
 import { Database } from 'types/supabase';
+import { handleOptimisticUpdate } from 'utils/handleOptimisticUpdate';
 import { formatTime, formatTimestampToTime } from 'utils/timeUtils';
 import './Timer.css';
 
@@ -30,8 +31,7 @@ export const Timer = ({ timerData }: TimerProps) => {
     round_time,
   } = timerData;
   const mode = useRoomMode();
-  const roomId = useRoomId();
-  const { updateTimer, fetchTimers, deleteTimer } = useTimerActions();
+  const { addTimer, updateTimer, deleteTimer } = useTimerActions();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [localEventName, setLocalEventName] = useState(event_name);
   const [eventFinishTime, setEventFinishTime] = useState<number>(
@@ -76,162 +76,207 @@ export const Timer = ({ timerData }: TimerProps) => {
     if (newName === '') {
       setLocalEventName(event_name);
       return;
-    } else {
-      // Optimistic Update
-      updateTimer(id, {
-        event_name: newName,
-      });
-
-      const { error } = await supabase.rpc('change_event_name', { _timer_id: id, _name: newName });
-
-      if (error) {
-        console.error(error.message);
-        fetchTimers(roomId);
-      }
     }
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          event_name: newName,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          event_name: event_name,
+        });
+
+        setLocalEventName(event_name);
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('change_event_name', {
+          _timer_id: id,
+          _name: newName,
+        });
+        return { error };
+      },
+    });
   };
 
   const handleStartTimer = async () => {
     const startDate = new Date();
 
-    // optimistic start
     const optimisticEndTime = new Date(startDate.getTime() + time_remaining).toISOString();
 
-    updateTimer(id, {
-      end_time: optimisticEndTime,
-      is_running: true,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          end_time: optimisticEndTime,
+          is_running: true,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          end_time,
+          is_running,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('start_timer', { _timer_id: id, _start_time: startDate.toISOString() });
+        return { error };
+      },
     });
-
-    const { error } = await supabase.rpc('start_timer', { _timer_id: id, _start_time: startDate.toISOString() });
-
-    if (error) {
-      console.error('Failed to start timer:', error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handlePauseTimer = async () => {
     const pauseDate = new Date();
-
-    // optimistic pause
     const optimisticTimeRemaining = new Date(end_time).getTime() - pauseDate.getTime();
 
-    updateTimer(id, {
-      time_remaining: optimisticTimeRemaining,
-      is_running: false,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          time_remaining: optimisticTimeRemaining,
+          is_running: false,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          end_time,
+          is_running,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('pause_timer', { _timer_id: id, _pause_time: pauseDate.toISOString() });
+        return { error };
+      },
     });
-
-    const { error } = await supabase.rpc('pause_timer', { _timer_id: id, _pause_time: pauseDate.toISOString() });
-
-    if (error) {
-      console.error('Failed to pause timer:', error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handleDeleteTimer = async () => {
-    // Optimistic update
-    deleteTimer(id);
-
-    const { error } = await supabase.rpc('delete_timer', {
-      _timer_id: id,
+    await handleOptimisticUpdate({
+      optimisticAction: () => deleteTimer(id),
+      rollbackAction: () => {
+        addTimer(timerData);
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('delete_timer', {
+          _timer_id: id,
+        });
+        return { error };
+      },
     });
-
-    if (error) {
-      console.error(error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handleNextRound = async () => {
-    // Optimistic Update
-    updateTimer(id, {
-      current_round_number: current_round_number + 1,
-      time_remaining: round_time,
-      is_running: false,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          current_round_number: current_round_number + 1,
+          time_remaining: round_time,
+          is_running: false,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          current_round_number,
+          time_remaining,
+          is_running,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('next_round', {
+          _timer_id: id,
+        });
+        return { error };
+      },
     });
-
-    const { error } = await supabase.rpc('next_round', {
-      _timer_id: id,
-    });
-
-    if (error) {
-      console.error(error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handleAdjustEndTime = async (adjustment: number) => {
-    // Optimistic Update
     const endTimeConverted = new Date(end_time).getTime();
-    updateTimer(id, {
-      end_time: new Date(endTimeConverted + adjustment).toISOString(),
-      time_remaining: time_remaining + adjustment,
-    });
 
-    const { error } = await supabase.rpc('update_end_time', {
-      _timer_id: id,
-      _time_modifier: adjustment,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          end_time: new Date(endTimeConverted + adjustment).toISOString(),
+          time_remaining: time_remaining + adjustment,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          end_time,
+          time_remaining,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('update_end_time', {
+          _timer_id: id,
+          _time_modifier: adjustment,
+        });
+        return { error };
+      },
     });
-
-    if (error) {
-      console.error(error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handleRemoveRound = async () => {
-    // Optimistic Update
     const min = has_draft ? 0 : 1;
-    updateTimer(id, {
-      rounds: Math.max(min, rounds - 1),
-    });
 
-    const { error } = await supabase.rpc('remove_round', {
-      _timer_id: id,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          rounds: Math.max(min, rounds - 1),
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          rounds,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('remove_round', {
+          _timer_id: id,
+        });
+        return { error };
+      },
     });
-
-    if (error) {
-      console.error(error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handleAddRound = async () => {
-    // Optimistic Update
-    updateTimer(id, {
-      rounds: rounds + 1,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          rounds: rounds + 1,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          rounds,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('add_round', {
+          _timer_id: id,
+        });
+        return { error };
+      },
     });
-
-    const { error } = await supabase.rpc('add_round', {
-      _timer_id: id,
-    });
-
-    if (error) {
-      console.error(error.message);
-      fetchTimers(roomId);
-    }
   };
 
   const handlePreviousRound = async () => {
-    // Optimistic Update
     const new_round = current_round_number - 1;
     const time = has_draft && new_round === 0 ? draft_time! : round_time;
 
-    const { error } = await supabase.rpc('previous_round', {
-      _timer_id: id,
+    await handleOptimisticUpdate({
+      optimisticAction: () =>
+        updateTimer(id, {
+          current_round_number: new_round,
+          time_remaining: time,
+          is_running: false,
+        }),
+      rollbackAction: () => {
+        updateTimer(id, {
+          current_round_number,
+          time_remaining,
+          is_running,
+        });
+      },
+      mutation: async () => {
+        const { error } = await supabase.rpc('previous_round', {
+          _timer_id: id,
+        });
+        return { error };
+      },
     });
-
-    updateTimer(id, {
-      current_round_number: current_round_number - 1,
-      time_remaining: time,
-      is_running: false,
-    });
-
-    if (error) {
-      console.error(error.message);
-      fetchTimers(roomId);
-    }
   };
 
   return (

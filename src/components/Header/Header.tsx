@@ -3,6 +3,7 @@ import logo from 'assets/logo.svg';
 import { ExpandablePill } from 'components/ExpandablePill';
 import { useEffect, useState } from 'react';
 import { useEditRoomId, useRoomActions, useRoomMode, useViewRoomId } from 'stores/useRoomStore';
+import { useTimerActions } from 'stores/useRoomTimersStore';
 import { RoomAccess } from 'types/RoomTypes';
 import { formatTimestampToTime } from 'utils/timeUtils';
 import './Header.css';
@@ -14,6 +15,7 @@ export const Header = () => {
   const viewOnlyRoomId = useViewRoomId();
   const mode = useRoomMode();
   const { clearRoom } = useRoomActions();
+  const { clearTimers } = useTimerActions();
 
   useEffect(() => {
     window.addEventListener('timerTick', onTimerTick);
@@ -27,6 +29,7 @@ export const Header = () => {
 
   const handleLeaveRoom = () => {
     clearRoom();
+    clearTimers();
   };
 
   return (

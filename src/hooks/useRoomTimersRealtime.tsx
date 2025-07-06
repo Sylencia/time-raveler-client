@@ -9,7 +9,7 @@ type TimerData = Database['public']['Tables']['timers']['Row'];
 
 export const useRoomTimersRealtime = () => {
   const roomId = useRoomId();
-  const { fetchTimers, setTimers } = useTimerActions();
+  const { fetchTimers, addTimer, updateTimer, deleteTimer } = useTimerActions();
 
   useEffect(() => {
     fetchTimers(roomId);
@@ -31,18 +31,18 @@ export const useRoomTimersRealtime = () => {
         (payload) => {
           const { eventType, new: newRow, old: oldRow } = payload;
 
-          setTimers((prev) => {
-            switch (eventType) {
-              case 'INSERT':
-                return [...prev, newRow as TimerData];
-              case 'UPDATE':
-                return prev.map((t) => (t.id === (newRow as TimerData).id ? (newRow as TimerData) : t));
-              case 'DELETE':
-                return prev.filter((t) => t.id !== (oldRow as TimerData).id);
-              default:
-                return prev;
+          switch (eventType) {
+            case 'INSERT':
+              return addTimer(newRow as TimerData);
+            case 'UPDATE': {
+              const updatedRow = newRow as TimerData;
+              return updateTimer(updatedRow.id, updatedRow);
             }
-          });
+            case 'DELETE':
+              return deleteTimer((oldRow as TimerData).id);
+            default:
+              console.warn('unknown event type');
+          }
         },
       )
       .subscribe();
@@ -50,5 +50,5 @@ export const useRoomTimersRealtime = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, setTimers]);
+  }, [roomId, addTimer, updateTimer, deleteTimer]);
 };
