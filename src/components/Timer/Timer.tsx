@@ -1,17 +1,15 @@
 import FinishSound from 'assets/finish.mp3';
 import clsx from 'clsx';
+import { useEventTimeCalculator } from 'hooks/useEventTimeCalculator';
 import { supabase } from 'lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { useRoomMode } from 'stores/useRoomStore';
-import { useTimerActions } from 'stores/useRoomTimersStore';
+import { type TimerData, useTimerActions } from 'stores/useRoomTimersStore';
 import { RoomAccess } from 'types/RoomTypes';
-import { Database } from 'types/supabase';
 import { handleOptimisticUpdate } from 'utils/handleOptimisticUpdate';
 import { formatTime, formatTimestampToTime } from 'utils/timeUtils';
 import './Timer.css';
-
-type TimerData = Database['public']['Tables']['timers']['Row'];
 
 interface TimerProps {
   timerData: TimerData;
@@ -34,27 +32,8 @@ export const Timer = ({ timerData }: TimerProps) => {
   const { addTimer, updateTimer, deleteTimer } = useTimerActions();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [localEventName, setLocalEventName] = useState(event_name);
-  const [eventFinishTime, setEventFinishTime] = useState<number>(
-    Date.now() + (rounds - current_round_number) * round_time + Math.max(0, time_remaining),
-  );
-  const [roundTimeRemaining, setRoundTimeRemaining] = useState(
-    is_running ? new Date(end_time).getTime() - Date.now() : time_remaining,
-  );
 
-  useEffect(() => {
-    const onTimerTick = () => {
-      const now = Date.now();
-      const remaining = is_running ? new Date(end_time).getTime() - now : time_remaining;
-      const estimatedFinishTime = now + (rounds - current_round_number) * round_time + Math.max(0, remaining);
-
-      setRoundTimeRemaining(remaining);
-      setEventFinishTime(estimatedFinishTime);
-    };
-
-    window.addEventListener('timerTick', onTimerTick);
-
-    return () => window.removeEventListener('timerTick', onTimerTick);
-  }, [is_running, end_time, time_remaining, roundTimeRemaining, rounds, current_round_number, round_time]);
+  const { roundTimeRemaining, eventFinishTime } = useEventTimeCalculator(timerData);
 
   const [soundPlayed, setSoundPlayed] = useState<boolean>(time_remaining > 0 ? false : true);
   const audioRef = useRef<HTMLAudioElement>(null);

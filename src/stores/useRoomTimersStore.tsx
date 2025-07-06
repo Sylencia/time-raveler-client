@@ -3,7 +3,7 @@ import { supabase } from 'lib/supabase';
 import { type Database } from 'types/supabase';
 import { create } from 'zustand';
 
-type TimerData = Database['public']['Tables']['timers']['Row'];
+export type TimerData = Database['public']['Tables']['timers']['Row'];
 
 interface TimerState {
   timers: TimerData[];
