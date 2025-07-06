@@ -12,21 +12,21 @@ export const useRoomTimersRealtime = () => {
   const { fetchTimers, addTimer, updateTimer, deleteTimer } = useTimerActions();
 
   useEffect(() => {
-    if (!roomId) return;
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) return;
 
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        fetchTimers(roomId);
-      }
+    const handleWake = () => {
+      if (roomId) fetchTimers(roomId);
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    fetchTimers(roomId);
+    window.addEventListener('focus', handleWake);
+
+    fetchTimers(roomId); // initial fetch
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWake);
     };
-  }, [fetchTimers, roomId]);
+  }, [roomId, fetchTimers]);
 
   useEffect(() => {
     if (!roomId) return;
