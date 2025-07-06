@@ -1,0 +1,66 @@
+// stores/useRoomTimersStore.ts
+import { supabase } from 'lib/supabase';
+import { type Database } from 'types/supabase';
+import { create } from 'zustand';
+
+export type TimerData = Database['public']['Tables']['timers']['Row'];
+
+interface TimerState {
+  timers: TimerData[];
+  loading: boolean;
+  actions: TimerActions;
+}
+
+interface TimerActions {
+  fetchTimers: (roomId: string) => void;
+  updateTimer: (id: string, update: Partial<TimerData>) => void;
+  addTimer: (timer: TimerData) => void;
+  deleteTimer: (id: string) => void;
+  clearTimers: () => void;
+}
+
+const useRoomTimersStore = create<TimerState>((set) => ({
+  timers: [],
+  loading: false,
+
+  actions: {
+    fetchTimers: async (roomId) => {
+      set({ loading: true });
+      const { data, error } = await supabase.from('timers').select('*').order('created_at').eq('room_id', roomId);
+
+      if (error) {
+        console.error('Failed to fetch timers:', error);
+        set({ timers: [], loading: false });
+        return;
+      }
+
+      set({ timers: data, loading: false });
+    },
+
+    updateTimer: (id, update) => {
+      set((state) => ({
+        timers: state.timers.map((t) => (t.id === id ? { ...t, ...update } : t)),
+      }));
+    },
+
+    addTimer: (timer) => {
+      set((state) => ({
+        timers: [timer, ...state.timers],
+      }));
+    },
+
+    deleteTimer: (id) => {
+      set((state) => ({
+        timers: state.timers.filter((t) => t.id !== id),
+      }));
+    },
+
+    clearTimers: () => {
+      set({ timers: [] });
+    },
+  },
+}));
+
+export const useTimers = () => useRoomTimersStore((state) => state.timers);
+export const useLoadingTimers = () => useRoomTimersStore((state) => state.loading);
+export const useTimerActions = () => useRoomTimersStore((state) => state.actions);

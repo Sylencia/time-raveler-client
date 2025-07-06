@@ -48,6 +48,14 @@
     position: absolute;
   }
 
+  .welcome-notice {
+    background: var(--lavender);
+    border: 1px solid var(--lavender);
+    color: black;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+  }
+
   @media all and (min-width: 31em) {
     .welcome-heading {
       font-size: 3rem;

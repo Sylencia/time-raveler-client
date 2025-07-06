@@ -1,88 +1,67 @@
-import { useWebSocketContext } from 'components/WebSocketContext';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { useRoomStore } from 'stores/useRoomStore';
+import { supabase } from 'lib/supabase';
+import { FormEvent, useState } from 'react';
+import { useEditRoomId, useRoomActions, useViewRoomId } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
-import {
-  EditRoomInfoMessage,
-  RoomValidityMessage,
-  ViewOnlyRoomInfoMessage,
-  type RoomInfoMessage,
-} from 'types/ServerMessageTypes';
-import { useShallow } from 'zustand/shallow';
 import './Welcome.css';
 
 export const Welcome = () => {
-  const [updateEditRoomInfo, updateViewRoomInfo, getRoomCode, resetRoomStore] = useRoomStore(
-    useShallow((state) => [
-      state.updateEditRoomInfo,
-      state.updateViewOnlyRoomInfo,
-      state.getRoomCode,
-      state.resetRoomStore,
-    ]),
-  );
-  const [roomCodeInput, setRoomCodeInput] = useState<string>('');
+  const { updateRoomId, updateEditRoomId, updateViewRoomId, updateMode } = useRoomActions();
+  const editRoomId = useEditRoomId();
+  const viewRoomId = useViewRoomId();
+  const [roomCodeInput, setRoomCodeInput] = useState<string>(editRoomId || viewRoomId || '');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const { lastJsonMessage, sendJsonMessage } = useWebSocketContext();
+  const handleCreateNewRoom = async () => {
+    const { data, error } = await supabase.rpc('create_room');
 
-  const handleRoomInfo = useCallback(
-    (data: RoomInfoMessage) => {
-      if (data.accessLevel === RoomAccess.EDIT) {
-        const { editAccessId, viewAccessId, accessLevel } = data as EditRoomInfoMessage;
-        updateEditRoomInfo(editAccessId, viewAccessId, accessLevel);
-      } else if (data.accessLevel === RoomAccess.VIEW_ONLY) {
-        const { viewAccessId, accessLevel } = data as ViewOnlyRoomInfoMessage;
-        updateViewRoomInfo(viewAccessId, accessLevel);
-      }
-
-      setRoomCodeInput('');
-    },
-    [updateEditRoomInfo, updateViewRoomInfo],
-  );
-
-  const handleRoomCheck = useCallback(
-    (data: RoomValidityMessage) => {
-      if (data.valid) {
-        setRoomCodeInput(getRoomCode());
-      } else {
-        resetRoomStore();
-      }
-    },
-    [setRoomCodeInput, getRoomCode, resetRoomStore],
-  );
-
-  useEffect(() => {
-    if (!lastJsonMessage) {
+    if (error) {
+      setErrorMessage(error.message);
       return;
     }
 
-    switch (lastJsonMessage.type) {
-      case 'roomInfo':
-        handleRoomInfo(lastJsonMessage);
-        break;
-      case 'roomValidity':
-        handleRoomCheck(lastJsonMessage);
-        break;
-      case 'error':
-        setErrorMessage(lastJsonMessage.message);
-        break;
-      default:
-        return;
-    }
-  }, [lastJsonMessage, handleRoomInfo, handleRoomCheck]);
-
-  const handleCreateNewRoom = () => {
-    sendJsonMessage({ type: 'createRoom' });
+    const { edit_code, read_code, id } = data[0];
+    updateEditRoomId(edit_code);
+    updateRoomId(id);
+    updateViewRoomId(read_code);
+    updateMode(RoomAccess.EDIT);
   };
 
-  const handleJoinRoom = (e: FormEvent<HTMLFormElement>) => {
+  const handleJoinRoom = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    sendJsonMessage({ type: 'subscribe', accessId: roomCodeInput.toUpperCase() });
+    const { data, error } = await supabase.rpc('join_room', { input_code: roomCodeInput.toUpperCase() });
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setErrorMessage(`Room code doesn't exist!`);
+      return;
+    } else {
+      const { read_code, access_level, room_id } = data[0];
+      const mode = access_level === 'edit' ? RoomAccess.EDIT : RoomAccess.VIEW_ONLY;
+      if (access_level === 'edit') {
+        updateEditRoomId(roomCodeInput.toUpperCase());
+      } else {
+        updateEditRoomId('');
+      }
+
+      updateRoomId(room_id);
+      updateViewRoomId(read_code);
+      updateMode(mode);
+
+      setRoomCodeInput('');
+    }
   };
 
   return (
     <div className="welcome">
       <h1 className="welcome-heading">Create and sync timers for multiple events at your local game store.</h1>
+
+      <div className="welcome-notice">
+        2025-07-06: The backend has been updated to use a new service, please let me know if anything isn't working.
+      </div>
 
       <div className="welcome-room-select">
         <button onClick={handleCreateNewRoom}>Create New Room</button>

@@ -1,18 +1,12 @@
 import { Dialog } from 'components/Dialog/Dialog';
+import { supabase } from 'lib/supabase';
 import { useRef, useState } from 'react';
+import { useRoomId } from 'stores/useRoomStore';
 import './AddTimer.css';
 
-interface AddTimerProps {
-  onAddTimer: (timer: {
-    eventName: string;
-    rounds: number;
-    roundTime: number;
-    hasDraft: boolean;
-    draftTime: number;
-  }) => void;
-}
+export const AddTimer = () => {
+  const roomId = useRoomId();
 
-export const AddTimer = ({ onAddTimer }: AddTimerProps) => {
   const [eventName, setEventName] = useState('');
   const [rounds, setRounds] = useState<string>('');
   const [roundTime, setRoundTime] = useState<string>('');
@@ -33,15 +27,23 @@ export const AddTimer = ({ onAddTimer }: AddTimerProps) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAddTimer({
-      eventName,
-      rounds: Number(rounds!),
-      roundTime: Number(roundTime!),
-      hasDraft,
-      draftTime: Number(draftTime ?? 0),
+
+    const { error } = await supabase.rpc('create_timer', {
+      _rounds: Number(rounds!),
+      _round_time: Number(roundTime!) * 60 * 1000,
+      _has_draft: hasDraft,
+      _draft_time: Number(draftTime ?? 0) * 60 * 1000,
+      _room_id: roomId,
+      _event_name: eventName,
     });
+
+    if (error) {
+      console.error(error.message);
+      return;
+    }
+
     setEventName('');
     setRounds('');
     setRoundTime('');

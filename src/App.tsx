@@ -1,12 +1,14 @@
 import { Header } from 'components/Header';
 import { Room } from 'components/Room';
 import { Welcome } from 'components/Welcome';
-import { useRoomStore } from 'stores/useRoomStore';
+import { useUpdateTick } from 'hooks/useUpdateTick';
+import { useRoomMode } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
 import './App.css';
 
 function App() {
-  const mode = useRoomStore((state) => state.mode);
+  const mode = useRoomMode();
+  useUpdateTick();
 
   return (
     <div className="app">
