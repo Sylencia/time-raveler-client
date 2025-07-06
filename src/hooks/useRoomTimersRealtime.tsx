@@ -12,6 +12,8 @@ export const useRoomTimersRealtime = () => {
   const { fetchTimers, addTimer, updateTimer, deleteTimer } = useTimerActions();
 
   useEffect(() => {
+    fetchTimers(roomId);
+
     const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) return;
 
@@ -20,8 +22,6 @@ export const useRoomTimersRealtime = () => {
     };
 
     window.addEventListener('focus', handleWake);
-
-    fetchTimers(roomId); // initial fetch
 
     return () => {
       window.removeEventListener('focus', handleWake);
