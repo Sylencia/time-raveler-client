@@ -2,12 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { TimerData } from 'stores/useRoomTimersStore';
 
 export const useEventTimeCalculator = (timerState: TimerData) => {
-  const [roundTimeRemaining, setRoundTimeRemaining] = useState(0);
-  const [eventFinishTime, setEventFinishTime] = useState(0);
+  const initialTimeRemaining = timerState.is_running
+    ? new Date(timerState.end_time).getTime() - Date.now()
+    : timerState.time_remaining;
+  const [roundTimeRemaining, setRoundTimeRemaining] = useState(initialTimeRemaining);
+  const [eventFinishTime, setEventFinishTime] = useState(
+    Date.now() +
+      (timerState.rounds - timerState.current_round_number) * timerState.round_time +
+      Math.max(0, initialTimeRemaining),
+  );
 
   const stateRef = useRef(timerState);
 
-  // Keep ref in sync with the latest state
   useEffect(() => {
     stateRef.current = timerState;
   }, [timerState]);

@@ -171,23 +171,31 @@
 
     &.view-mode {
       height: 12.5rem;
-      grid-template-rows: max-content 1fr;
+      grid-template-rows: max-content max-content 1fr;
       grid-template-columns: 1fr max-content;
       grid-template-areas:
-        'name round'
-        'timer timer';
+        'name timer'
+        'round timer'
+        'finish-time timer';
 
       .timer-details-name {
         font-size: 1.75rem;
       }
 
       .timer-details-round {
-        font-size: 1.75rem;
+        font-size: 1.5rem;
       }
 
       .timer-details-time {
         font-size: 7rem;
         justify-content: center;
+        align-items: center;
+      }
+
+      .event-finish-time {
+        font-size: 1.25rem;
+        display: flex;
+        align-items: end;
       }
     }
 
