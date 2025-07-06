@@ -2,18 +2,19 @@ import { AddTimer } from 'components/AddTimer';
 import { Timer } from 'components/Timer';
 import { useRoomTimersRealtime } from 'hooks/useRoomTimersRealtime';
 import { useRoomMode } from 'stores/useRoomStore';
-import { useLoadingTimers, useTimers } from 'stores/useRoomTimersStore';
+import { useInitialTimerLoad, useLoadingTimers, useTimers } from 'stores/useRoomTimersStore';
 import { RoomAccess } from 'types/RoomTypes';
 import './Room.css';
 
 export const Room = () => {
   const timers = useTimers();
   const loading = useLoadingTimers();
+  const isInitialLoad = useInitialTimerLoad();
   const mode = useRoomMode();
 
   useRoomTimersRealtime();
 
-  if (loading) {
+  if (isInitialLoad && loading) {
     return <div className="no-timers-msg">Loading timers...</div>;
   }
 

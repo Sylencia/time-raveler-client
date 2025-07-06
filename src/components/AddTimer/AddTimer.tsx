@@ -1,4 +1,5 @@
 import { Dialog } from 'components/Dialog/Dialog';
+import { Spinner } from 'components/Spinner';
 import { supabase } from 'lib/supabase';
 import { useRef, useState } from 'react';
 import { useRoomId } from 'stores/useRoomStore';
@@ -13,6 +14,7 @@ export const AddTimer = () => {
   const [hasDraft, setHasDraft] = useState(false);
   const [draftTime, setDraftTime] = useState<string>('');
   const formRef = useRef<HTMLFormElement>(null);
+  const [isAdding, setIsAdding] = useState<boolean>(false);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toggleDialog = () => {
@@ -30,6 +32,7 @@ export const AddTimer = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setIsAdding(true);
     const { error } = await supabase.rpc('create_timer', {
       _rounds: Number(rounds!),
       _round_time: Number(roundTime!) * 60 * 1000,
@@ -39,6 +42,7 @@ export const AddTimer = () => {
       _event_name: eventName,
     });
 
+    setIsAdding(false);
     if (error) {
       console.error(error.message);
       return;
@@ -121,8 +125,8 @@ export const AddTimer = () => {
             />
           </div>
           <div className="form-field-divider" />
-          <button type="submit" className="add-timer-submit">
-            Add Timer
+          <button type="submit" className="add-timer-submit" disabled={isAdding}>
+            {isAdding ? <Spinner /> : 'Add Timer'}
           </button>
         </form>
       </Dialog>

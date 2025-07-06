@@ -18,6 +18,7 @@
     "react-dom": "^18.3.1",
     "react-tiny-popover": "^8.1.4",
     "react-use-websocket": "^4.11.1",
+    "sonner": "^2.0.6",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

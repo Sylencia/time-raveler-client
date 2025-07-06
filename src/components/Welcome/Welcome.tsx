@@ -1,5 +1,6 @@
 import { supabase } from 'lib/supabase';
 import { FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 import { useEditRoomId, useRoomActions, useViewRoomId } from 'stores/useRoomStore';
 import { RoomAccess } from 'types/RoomTypes';
 import './Welcome.css';
@@ -9,13 +10,17 @@ export const Welcome = () => {
   const editRoomId = useEditRoomId();
   const viewRoomId = useViewRoomId();
   const [roomCodeInput, setRoomCodeInput] = useState<string>(editRoomId || viewRoomId || '');
-  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleCreateNewRoom = async () => {
     const { data, error } = await supabase.rpc('create_room');
 
     if (error) {
-      setErrorMessage(error.message);
+      toast.error(error.message, {
+        style: {
+          background: 'var(--red)',
+          border: 'var(--maroon)',
+        },
+      });
       return;
     }
 
@@ -31,12 +36,22 @@ export const Welcome = () => {
     const { data, error } = await supabase.rpc('join_room', { input_code: roomCodeInput.toUpperCase() });
 
     if (error) {
-      setErrorMessage(error.message);
+      toast.error(error.message, {
+        style: {
+          background: 'var(--red)',
+          border: 'var(--maroon)',
+        },
+      });
       return;
     }
 
     if (!data || data.length === 0) {
-      setErrorMessage(`Room code doesn't exist!`);
+      toast.error(`Room code doesn't exist!`, {
+        style: {
+          background: 'var(--red)',
+          border: 'var(--maroon)',
+        },
+      });
       return;
     } else {
       const { read_code, access_level, room_id } = data[0];
@@ -82,12 +97,10 @@ export const Welcome = () => {
               title="Room codes are 4 characters long"
               onChange={(event) => {
                 setRoomCodeInput(event.target.value);
-                setErrorMessage('');
               }}
             ></input>
             <button type="submit">Join Room</button>
           </form>
-          {errorMessage && <div className="error-message">{errorMessage}</div>}
         </div>
       </div>
     </div>

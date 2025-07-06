@@ -12,7 +12,20 @@ export const useRoomTimersRealtime = () => {
   const { fetchTimers, addTimer, updateTimer, deleteTimer } = useTimerActions();
 
   useEffect(() => {
+    if (!roomId) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        fetchTimers(roomId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     fetchTimers(roomId);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchTimers, roomId]);
 
   useEffect(() => {

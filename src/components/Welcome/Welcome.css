@@ -49,10 +49,11 @@
   }
 
   .welcome-notice {
-    background: var(--lavender);
-    border: 1px solid var(--lavender);
-    color: black;
+    background: var(--subtext1);
+    border: 1px solid var(--subtext0);
+    color: var(--inverted-text);
     padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
     border-radius: 0.25rem;
   }
 

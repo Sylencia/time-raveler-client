@@ -51,6 +51,13 @@
     background-image: var(--teal-gradient);
     font-weight: 600;
     color: var(--inverted-text);
+
+    &:disabled {
+      background-color: var(--overlay0);
+      background-image: none;
+      cursor: default;
+      color: var(--text);
+    }
   }
 
   input[type='checkbox'] {
