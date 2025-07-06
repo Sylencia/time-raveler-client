@@ -21,7 +21,7 @@ export const Header = () => {
     window.addEventListener('timerTick', onTimerTick);
 
     return () => window.removeEventListener('timerTick', onTimerTick);
-  });
+  }, []);
 
   const onTimerTick = (): void => {
     setCurrentTime(formatTimestampToTime(Date.now()));
