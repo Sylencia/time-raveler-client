@@ -65,7 +65,7 @@ const useRoomTimersStore = create<TimerState>((set, get) => ({
 
     addTimer: (timer) => {
       set((state) => ({
-        timers: [timer, ...state.timers],
+        timers: [...state.timers, timer],
       }));
     },
 
