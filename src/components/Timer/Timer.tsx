@@ -60,16 +60,16 @@ export const Timer = ({ timerData }: TimerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (time_remaining <= 0 && !soundPlayed) {
+    if (roundTimeRemaining <= 0 && !soundPlayed) {
       setSoundPlayed(true);
       audioRef.current?.play();
     }
 
     // Reset the sound played if we go back above 0s remaining
-    if (time_remaining > 0 && soundPlayed) {
+    if (roundTimeRemaining > 0 && soundPlayed) {
       setSoundPlayed(false);
     }
-  }, [time_remaining, audioRef, soundPlayed]);
+  }, [roundTimeRemaining, audioRef, soundPlayed]);
 
   const handleEventNameUpdate = async (e: React.FocusEvent<HTMLInputElement, Element>) => {
     const newName = e.target.value;
