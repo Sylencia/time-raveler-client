@@ -59,6 +59,10 @@ export const Welcome = () => {
     <div className="welcome">
       <h1 className="welcome-heading">Create and sync timers for multiple events at your local game store.</h1>
 
+      <div className="welcome-notice">
+        2025-07-06: The backend has been updated to use a new service, please let me know if anything isn't working.
+      </div>
+
       <div className="welcome-room-select">
         <button onClick={handleCreateNewRoom}>Create New Room</button>
         <p>OR</p>
