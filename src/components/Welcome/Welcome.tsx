@@ -26,9 +26,9 @@ export const Welcome = () => {
       return;
     }
 
-    const { edit_code, read_code, id } = data[0];
+    const { edit_code, read_code, room_id } = data[0];
     updateEditRoomId(edit_code);
-    updateRoomId(id);
+    updateRoomId(room_id);
     updateViewRoomId(read_code);
     updateMode(RoomAccess.EDIT);
   };
