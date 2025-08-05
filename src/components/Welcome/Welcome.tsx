@@ -23,7 +23,7 @@ export const Welcome = () => {
       <h1 className="welcome-heading">Create and sync timers for multiple events at your local game store.</h1>
 
       <div className="welcome-notice">
-        2025-07-06: The backend has been updated to use a new service, please let me know if anything isn't working.
+        2025-08-05: An update may have broken the timers but this should be fixed now (hopefully!)
       </div>
 
       <div className="welcome-room-select">
