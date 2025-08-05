@@ -18,7 +18,12 @@ export const useJoinRoom = () => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast("Room code doesn't exist!");
+        toast.error("Room code doesn't exist!", {
+          style: {
+            background: 'var(--red)',
+            border: 'var(--maroon)',
+          },
+        });
         throw new Error("Room code doesn't exist!");
       }
       return data[0];
