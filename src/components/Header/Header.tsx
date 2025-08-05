@@ -11,7 +11,7 @@ import './Header.css';
 export const Header = () => {
   const [currentTime, setCurrentTime] = useState<string>(formatTimestampToTime(Date.now()));
 
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const { cleanupRoom } = useCleanupRoom();
 
   useEffect(() => {

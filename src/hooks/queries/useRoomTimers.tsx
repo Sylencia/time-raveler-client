@@ -7,7 +7,7 @@ import { useRoomInfo } from './useRoomInfo';
 const timersQueryKey = (roomId: string) => ['timers', roomId];
 
 export const useRoomTimers = () => {
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const queryClient = useQueryClient();
 
   // Fetch timers with optional timestamp filter

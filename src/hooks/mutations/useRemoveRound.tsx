@@ -10,7 +10,7 @@ interface RemoveRound {
 
 export const useRemoveRound = () => {
   const queryClient = useQueryClient();
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const roomId = roomInfo?.room_id || '';
 
   return useMutation({

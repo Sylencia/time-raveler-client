@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
 import './AddTimer.css';
 
 export const AddTimer = () => {
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const { mutate: addTimer, isPending } = useAddTimer();
 
   const [eventName, setEventName] = useState('');

@@ -6,7 +6,7 @@ import { RoomAccess } from 'types/roomTypes';
 import './Room.css';
 
 export const Room = () => {
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const { timers, isLoading } = useRoomTimers();
 
   if (isLoading) {

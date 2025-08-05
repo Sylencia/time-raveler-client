@@ -1,4 +1,3 @@
-// hooks/useRoomInfo.ts
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Database } from 'types/supabase';
@@ -29,5 +28,5 @@ export const useRoomInfo = () => {
     return unsubscribe;
   }, [queryClient]);
 
-  return { data: roomInfo };
+  return { roomInfo };
 };

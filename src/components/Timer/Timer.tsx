@@ -24,7 +24,7 @@ interface TimerProps {
 
 export const Timer = ({ timerData }: TimerProps) => {
   const { id, end_time, time_remaining, is_running, event_name, rounds, current_round_number, has_draft } = timerData;
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [localEventName, setLocalEventName] = useState(event_name);
 

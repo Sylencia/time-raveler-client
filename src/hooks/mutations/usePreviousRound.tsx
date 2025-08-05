@@ -10,7 +10,7 @@ interface PreviousRound {
 
 export const usePreviousRound = () => {
   const queryClient = useQueryClient();
-  const { data: roomInfo } = useRoomInfo();
+  const { roomInfo } = useRoomInfo();
   const roomId = roomInfo?.room_id || '';
 
   return useMutation({
