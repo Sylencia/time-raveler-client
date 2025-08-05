@@ -1,12 +1,13 @@
 import { Dialog } from 'components/Dialog/Dialog';
 import { Spinner } from 'components/Spinner';
-import { supabase } from 'lib/supabase';
+import { useAddTimer } from 'hooks/mutations/useAddTimer';
+import { useRoomInfo } from 'hooks/queries/useRoomInfo';
 import { useRef, useState } from 'react';
-import { useRoomId } from 'stores/useRoomStore';
 import './AddTimer.css';
 
 export const AddTimer = () => {
-  const roomId = useRoomId();
+  const { data: roomInfo } = useRoomInfo();
+  const { mutate: addTimer, isPending } = useAddTimer();
 
   const [eventName, setEventName] = useState('');
   const [rounds, setRounds] = useState<string>('');
@@ -14,7 +15,6 @@ export const AddTimer = () => {
   const [hasDraft, setHasDraft] = useState(false);
   const [draftTime, setDraftTime] = useState<string>('');
   const formRef = useRef<HTMLFormElement>(null);
-  const [isAdding, setIsAdding] = useState<boolean>(false);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toggleDialog = () => {
@@ -32,30 +32,28 @@ export const AddTimer = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setIsAdding(true);
-    const { error } = await supabase.rpc('create_timer', {
-      _rounds: Number(rounds!),
-      _round_time: Number(roundTime!) * 60 * 1000,
-      _has_draft: hasDraft,
-      _draft_time: Number(draftTime ?? 0) * 60 * 1000,
-      _room_id: roomId,
-      _event_name: eventName,
-    });
+    addTimer(
+      {
+        rounds: Number(rounds!),
+        roundTime: Number(roundTime!) * 60 * 1000,
+        hasDraft: hasDraft,
+        draftTime: Number(draftTime ?? 0) * 60 * 1000,
+        roomId: roomInfo!.room_id,
+        eventName,
+      },
+      {
+        onSuccess: () => {
+          setEventName('');
+          setRounds('');
+          setRoundTime('');
+          setHasDraft(false);
+          setDraftTime('');
+          toggleDialog();
 
-    setIsAdding(false);
-    if (error) {
-      console.error(error.message);
-      return;
-    }
-
-    setEventName('');
-    setRounds('');
-    setRoundTime('');
-    setHasDraft(false);
-    setDraftTime('');
-    toggleDialog();
-
-    formRef.current?.reset();
+          formRef.current?.reset();
+        },
+      },
+    );
   };
 
   return (
@@ -125,8 +123,8 @@ export const AddTimer = () => {
             />
           </div>
           <div className="form-field-divider" />
-          <button type="submit" className="add-timer-submit" disabled={isAdding}>
-            {isAdding ? <Spinner /> : 'Add Timer'}
+          <button type="submit" className="add-timer-submit" disabled={isPending}>
+            {isPending ? <Spinner /> : 'Add Timer'}
           </button>
         </form>
       </Dialog>

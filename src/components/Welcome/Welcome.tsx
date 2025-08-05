@@ -1,69 +1,21 @@
-import { supabase } from 'lib/supabase';
+import { useCreateRoom } from 'hooks/mutations/useCreateRoom';
+import { useJoinRoom } from 'hooks/mutations/useJoinRoom';
 import { FormEvent, useState } from 'react';
-import { toast } from 'sonner';
-import { useEditRoomId, useRoomActions, useViewRoomId } from 'stores/useRoomStore';
-import { RoomAccess } from 'types/RoomTypes';
 import './Welcome.css';
 
 export const Welcome = () => {
-  const { updateRoomId, updateEditRoomId, updateViewRoomId, updateMode } = useRoomActions();
-  const editRoomId = useEditRoomId();
-  const viewRoomId = useViewRoomId();
-  const [roomCodeInput, setRoomCodeInput] = useState<string>(editRoomId || viewRoomId || '');
+  const [roomCodeInput, setRoomCodeInput] = useState<string>('');
+  const { mutate: joinRoom } = useJoinRoom();
+  const { mutate: createRoom } = useCreateRoom();
 
   const handleCreateNewRoom = async () => {
-    const { data, error } = await supabase.rpc('create_room');
-
-    if (error) {
-      toast.error(error.message, {
-        style: {
-          background: 'var(--red)',
-          border: 'var(--maroon)',
-        },
-      });
-      return;
-    }
-
-    const { edit_code, read_code, room_id } = data[0];
-    updateEditRoomId(edit_code);
-    updateRoomId(room_id);
-    updateViewRoomId(read_code);
-    updateMode(RoomAccess.EDIT);
+    createRoom();
   };
 
-  const handleJoinRoom = async (e: FormEvent<HTMLFormElement>) => {
+  const handleJoinRoom = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { data, error } = await supabase.rpc('join_room', { input_code: roomCodeInput.toUpperCase() });
 
-    if (error) {
-      toast.error(error.message, {
-        style: {
-          background: 'var(--red)',
-          border: 'var(--maroon)',
-        },
-      });
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      toast.error(`Room code doesn't exist!`, {
-        style: {
-          background: 'var(--red)',
-          border: 'var(--maroon)',
-        },
-      });
-      return;
-    } else {
-      const { read_code, edit_code, access_level, room_id } = data[0];
-      const mode = access_level === 'edit' ? RoomAccess.EDIT : RoomAccess.VIEW_ONLY;
-
-      updateRoomId(room_id);
-      updateEditRoomId(edit_code);
-      updateViewRoomId(read_code);
-      updateMode(mode);
-
-      setRoomCodeInput('');
-    }
+    joinRoom({ roomCode: roomCodeInput });
   };
 
   return (

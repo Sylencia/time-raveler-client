@@ -1,13 +1,12 @@
 import { Header } from 'components/Header';
 import { Room } from 'components/Room';
 import { Welcome } from 'components/Welcome';
+import { useRoomInfo } from 'hooks/queries/useRoomInfo';
 import { useUpdateTick } from 'hooks/useUpdateTick';
-import { useRoomMode } from 'stores/useRoomStore';
-import { RoomAccess } from 'types/RoomTypes';
 import './App.css';
 
 function App() {
-  const mode = useRoomMode();
+  const { data: roomInfo } = useRoomInfo();
   useUpdateTick();
 
   return (
@@ -15,7 +14,7 @@ function App() {
       <div className="app-header">
         <Header />
       </div>
-      <div className="app-content">{mode === RoomAccess.NONE ? <Welcome /> : <Room />}</div>
+      <div className="app-content">{!roomInfo?.access_level ? <Welcome /> : <Room />}</div>
     </div>
   );
 }
