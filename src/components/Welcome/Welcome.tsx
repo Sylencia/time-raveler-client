@@ -1,3 +1,4 @@
+import { useJoinRoom } from 'hooks/queries/useJoinRoom';
 import { supabase } from 'lib/supabase';
 import { FormEvent, useState } from 'react';
 import { toast } from 'sonner';
@@ -10,6 +11,7 @@ export const Welcome = () => {
   const editRoomId = useEditRoomId();
   const viewRoomId = useViewRoomId();
   const [roomCodeInput, setRoomCodeInput] = useState<string>(editRoomId || viewRoomId || '');
+  const { mutate: joinRoom } = useJoinRoom();
 
   const handleCreateNewRoom = async () => {
     const { data, error } = await supabase.rpc('create_room');
@@ -31,43 +33,17 @@ export const Welcome = () => {
     updateMode(RoomAccess.EDIT);
   };
 
-  const handleJoinRoom = async (e: FormEvent<HTMLFormElement>) => {
+  const handleJoinRoom = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { data, error } = await supabase.rpc('join_room', { input_code: roomCodeInput.toUpperCase() });
 
-    if (error) {
-      toast.error(error.message, {
-        style: {
-          background: 'var(--red)',
-          border: 'var(--maroon)',
+    joinRoom(
+      { roomCode: roomCodeInput },
+      {
+        onSuccess: () => {
+          setRoomCodeInput('');
         },
-      });
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      toast.error(`Room code doesn't exist!`, {
-        style: {
-          background: 'var(--red)',
-          border: 'var(--maroon)',
-        },
-      });
-      return;
-    } else {
-      const { read_code, access_level, room_id } = data[0];
-      const mode = access_level === 'edit' ? RoomAccess.EDIT : RoomAccess.VIEW_ONLY;
-      if (access_level === 'edit') {
-        updateEditRoomId(roomCodeInput.toUpperCase());
-      } else {
-        updateEditRoomId('');
-      }
-
-      updateRoomId(room_id);
-      updateViewRoomId(read_code);
-      updateMode(mode);
-
-      setRoomCodeInput('');
-    }
+      },
+    );
   };
 
   return (
