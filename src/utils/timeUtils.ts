@@ -34,3 +34,7 @@ export const formatTimestampToTime = (utcNumber: number): string => {
   const timeString = `${hours.toString().padStart(2, '0')}:${minutes}${ampm}`;
   return timeString;
 };
+
+export const adjustIsoTime = (isoString: string, offsetMs: number) => {
+  return new Date(Date.parse(isoString) + offsetMs).toISOString();
+};

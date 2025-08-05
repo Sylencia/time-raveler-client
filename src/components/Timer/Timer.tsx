@@ -1,13 +1,20 @@
 import FinishSound from 'assets/finish.mp3';
 import clsx from 'clsx';
+import { useAddRound } from 'hooks/mutations/useAddRound';
+import { useAdjustEndTime } from 'hooks/mutations/useAdjustEndTime';
+import { useDeleteTimer } from 'hooks/mutations/useDeleteTimer';
+import { useNextRound } from 'hooks/mutations/useNextRound';
+import { usePauseTimer } from 'hooks/mutations/usePauseTimer';
+import { usePreviousRound } from 'hooks/mutations/usePreviousRound';
+import { useRemoveRound } from 'hooks/mutations/useRemoveRound';
+import { useStartTimer } from 'hooks/mutations/useStartTimer';
+import { useUpdateEventName } from 'hooks/mutations/useUpdateEventName';
+import { useRoomInfo } from 'hooks/queries/useRoomInfo';
 import { useEventTimeCalculator } from 'hooks/useEventTimeCalculator';
-import { supabase } from 'lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 import { Popover } from 'react-tiny-popover';
-import { useRoomMode } from 'stores/useRoomStore';
-import { type TimerData, useTimerActions } from 'stores/useRoomTimersStore';
-import { RoomAccess } from 'types/RoomTypes';
-import { handleOptimisticUpdate } from 'utils/handleOptimisticUpdate';
+import { type TimerData } from 'types/commonTypes';
+import { RoomAccess } from 'types/roomTypes';
 import { formatTime, formatTimestampToTime } from 'utils/timeUtils';
 import './Timer.css';
 
@@ -16,22 +23,21 @@ interface TimerProps {
 }
 
 export const Timer = ({ timerData }: TimerProps) => {
-  const {
-    id,
-    end_time,
-    time_remaining,
-    is_running,
-    event_name,
-    rounds,
-    current_round_number,
-    has_draft,
-    draft_time,
-    round_time,
-  } = timerData;
-  const mode = useRoomMode();
-  const { addTimer, updateTimer, deleteTimer } = useTimerActions();
+  const { id, end_time, time_remaining, is_running, event_name, rounds, current_round_number, has_draft } = timerData;
+  const { data: roomInfo } = useRoomInfo();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [localEventName, setLocalEventName] = useState(event_name);
+
+  // Mutations
+  const { mutate: updateEventName, isPending: namePending } = useUpdateEventName();
+  const { mutate: startTimer, isPending: startPending } = useStartTimer();
+  const { mutate: pauseTimer, isPending: pausePending } = usePauseTimer();
+  const { mutate: deleteTimer } = useDeleteTimer();
+  const { mutate: nextRound, isPending: nextRoundPending } = useNextRound();
+  const { mutate: adjustEndTime, isPending: adjustTimePending } = useAdjustEndTime();
+  const { mutate: removeRound, isPending: removeRoundPending } = useRemoveRound();
+  const { mutate: addRound, isPending: addRoundPending } = useAddRound();
+  const { mutate: previousRound, isPending: previousRoundPending } = usePreviousRound();
 
   const { roundTimeRemaining, eventFinishTime } = useEventTimeCalculator(timerData);
 
@@ -50,211 +56,73 @@ export const Timer = ({ timerData }: TimerProps) => {
     }
   }, [roundTimeRemaining, audioRef, soundPlayed]);
 
-  const handleEventNameUpdate = async (e: React.FocusEvent<HTMLInputElement, Element>) => {
-    const newName = e.target.value;
-    if (newName === '') {
+  const handleEventNameUpdate = (e: React.FocusEvent<HTMLInputElement, Element>) => {
+    const newName = e.target.value.trim();
+
+    if (newName === '' || newName === event_name) {
       setLocalEventName(event_name);
       return;
     }
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          event_name: newName,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          event_name: event_name,
-        });
 
-        setLocalEventName(event_name);
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('change_event_name', {
-          _timer_id: id,
-          _name: newName,
-        });
-        return { error };
-      },
-    });
+    updateEventName({ timerId: id, newName });
   };
 
-  const handleStartTimer = async () => {
+  const handleStartTimer = () => {
     const startDate = new Date();
 
     const optimisticEndTime = new Date(startDate.getTime() + time_remaining).toISOString();
-
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          end_time: optimisticEndTime,
-          is_running: true,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          end_time,
-          is_running,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('start_timer', { _timer_id: id, _start_time: startDate.toISOString() });
-        return { error };
-      },
+    startTimer({
+      timerId: id,
+      startTime: startDate.toISOString(),
+      optimisticEndTime,
     });
   };
 
-  const handlePauseTimer = async () => {
+  const handlePauseTimer = () => {
     const pauseDate = new Date();
     const optimisticTimeRemaining = new Date(end_time).getTime() - pauseDate.getTime();
 
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          time_remaining: optimisticTimeRemaining,
-          is_running: false,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          end_time,
-          is_running,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('pause_timer', { _timer_id: id, _pause_time: pauseDate.toISOString() });
-        return { error };
-      },
+    pauseTimer({
+      timerId: id,
+      pauseTime: pauseDate.toISOString(),
+      optimisticTimeRemaining,
     });
   };
 
-  const handleDeleteTimer = async () => {
-    await handleOptimisticUpdate({
-      optimisticAction: () => deleteTimer(id),
-      rollbackAction: () => {
-        addTimer(timerData);
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('delete_timer', {
-          _timer_id: id,
-        });
-        return { error };
-      },
+  const handleDeleteTimer = () => {
+    deleteTimer({
+      timerId: id,
     });
   };
 
-  const handleNextRound = async () => {
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          current_round_number: current_round_number + 1,
-          time_remaining: round_time,
-          is_running: false,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          current_round_number,
-          time_remaining,
-          is_running,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('next_round', {
-          _timer_id: id,
-        });
-        return { error };
-      },
+  const handleNextRound = () => {
+    nextRound({
+      timerId: id,
     });
   };
 
-  const handleAdjustEndTime = async (adjustment: number) => {
-    const endTimeConverted = new Date(end_time).getTime();
-
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          end_time: new Date(endTimeConverted + adjustment).toISOString(),
-          time_remaining: time_remaining + adjustment,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          end_time,
-          time_remaining,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('update_end_time', {
-          _timer_id: id,
-          _time_modifier: adjustment,
-        });
-        return { error };
-      },
+  const handleAdjustEndTime = (adjustment: number) => {
+    adjustEndTime({
+      timerId: id,
+      timeAdjustment: adjustment,
     });
   };
 
-  const handleRemoveRound = async () => {
-    const min = has_draft ? 0 : 1;
-
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          rounds: Math.max(min, rounds - 1),
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          rounds,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('remove_round', {
-          _timer_id: id,
-        });
-        return { error };
-      },
+  const handleRemoveRound = () => {
+    removeRound({
+      timerId: id,
     });
   };
 
   const handleAddRound = async () => {
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          rounds: rounds + 1,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          rounds,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('add_round', {
-          _timer_id: id,
-        });
-        return { error };
-      },
+    addRound({
+      timerId: id,
     });
   };
 
   const handlePreviousRound = async () => {
-    const new_round = current_round_number - 1;
-    const time = has_draft && new_round === 0 ? draft_time! : round_time;
-
-    await handleOptimisticUpdate({
-      optimisticAction: () =>
-        updateTimer(id, {
-          current_round_number: new_round,
-          time_remaining: time,
-          is_running: false,
-        }),
-      rollbackAction: () => {
-        updateTimer(id, {
-          current_round_number,
-          time_remaining,
-          is_running,
-        });
-      },
-      mutation: async () => {
-        const { error } = await supabase.rpc('previous_round', {
-          _timer_id: id,
-        });
-        return { error };
-      },
+    previousRound({
+      timerId: id,
     });
   };
 
@@ -264,7 +132,7 @@ export const Timer = ({ timerData }: TimerProps) => {
       <div
         className={clsx('timer-container', {
           overtime: roundTimeRemaining < 0,
-          'view-mode': mode === RoomAccess.VIEW_ONLY,
+          'view-mode': roomInfo?.access_level === RoomAccess.VIEW_ONLY,
         })}
       >
         <h2 className="timer-details-name">{event_name}</h2>
@@ -272,13 +140,14 @@ export const Timer = ({ timerData }: TimerProps) => {
           {current_round_number === 0 ? 'Draft Time' : `Round ${current_round_number}/${rounds}`}
         </p>
 
-        {mode === RoomAccess.EDIT && (
+        {roomInfo?.access_level === RoomAccess.EDIT && (
           <div className="timer-button-container">
             <button
               className={clsx({
                 'pause-button': is_running,
                 'start-button': !is_running,
               })}
+              disabled={pausePending || startPending}
               onClick={() => (is_running ? handlePauseTimer() : handleStartTimer())}
             >
               {is_running ? 'Pause' : 'Start'}
@@ -289,7 +158,11 @@ export const Timer = ({ timerData }: TimerProps) => {
                 End Event
               </button>
             ) : (
-              <button onClick={handleNextRound} className="next-round-button">
+              <button
+                disabled={nextRoundPending || previousRoundPending}
+                onClick={handleNextRound}
+                className="next-round-button"
+              >
                 Next Round
               </button>
             )}
@@ -310,27 +183,47 @@ export const Timer = ({ timerData }: TimerProps) => {
                   />
 
                   <div className="timer-controls-grid-4">
-                    <button onClick={() => handleAdjustEndTime(-5 * 60 * 1000)}>-5m</button>
-                    <button onClick={() => handleAdjustEndTime(-1 * 60 * 1000)}>-1m</button>
-                    <button onClick={() => handleAdjustEndTime(1 * 60 * 1000)}>+1m</button>
-                    <button onClick={() => handleAdjustEndTime(5 * 60 * 1000)}>+5m</button>
-                  </div>
-
-                  <div className="timer-controls-grid-2">
-                    <button disabled={rounds <= 1 || current_round_number === rounds} onClick={handleRemoveRound}>
-                      -1 Round
+                    <button disabled={adjustTimePending} onClick={() => handleAdjustEndTime(-5 * 60 * 1000)}>
+                      -5m
                     </button>
-                    <button onClick={handleAddRound}>+1 Round</button>
+                    <button disabled={adjustTimePending} onClick={() => handleAdjustEndTime(-1 * 60 * 1000)}>
+                      -1m
+                    </button>
+                    <button disabled={adjustTimePending} onClick={() => handleAdjustEndTime(1 * 60 * 1000)}>
+                      +1m
+                    </button>
+                    <button disabled={adjustTimePending} onClick={() => handleAdjustEndTime(5 * 60 * 1000)}>
+                      +5m
+                    </button>
                   </div>
 
                   <div className="timer-controls-grid-2">
                     <button
-                      disabled={has_draft ? current_round_number <= 0 : current_round_number <= 1}
+                      disabled={rounds <= 1 || current_round_number === rounds || removeRoundPending || addRoundPending}
+                      onClick={handleRemoveRound}
+                    >
+                      -1 Round
+                    </button>
+                    <button disabled={removeRoundPending || addRoundPending} onClick={handleAddRound}>
+                      +1 Round
+                    </button>
+                  </div>
+
+                  <div className="timer-controls-grid-2">
+                    <button
+                      disabled={
+                        has_draft
+                          ? current_round_number <= 0
+                          : current_round_number <= 1 || previousRoundPending || nextRoundPending
+                      }
                       onClick={handlePreviousRound}
                     >
                       Prev Round
                     </button>
-                    <button disabled={current_round_number === rounds} onClick={handleNextRound}>
+                    <button
+                      disabled={current_round_number === rounds || previousRoundPending || nextRoundPending}
+                      onClick={handleNextRound}
+                    >
                       Next Round
                     </button>
                   </div>

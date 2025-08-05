@@ -1,21 +1,18 @@
 import { ExitIcon, EyeOpenIcon, Pencil1Icon } from '@radix-ui/react-icons';
 import logo from 'assets/logo.svg';
 import { ExpandablePill } from 'components/ExpandablePill';
+import { useRoomInfo } from 'hooks/queries/useRoomInfo';
+import { useCleanupRoom } from 'hooks/useCleanupRoom';
 import { useEffect, useState } from 'react';
-import { useEditRoomId, useRoomActions, useRoomMode, useViewRoomId } from 'stores/useRoomStore';
-import { useTimerActions } from 'stores/useRoomTimersStore';
-import { RoomAccess } from 'types/RoomTypes';
+import { RoomAccess } from 'types/roomTypes';
 import { formatTimestampToTime } from 'utils/timeUtils';
 import './Header.css';
 
 export const Header = () => {
   const [currentTime, setCurrentTime] = useState<string>(formatTimestampToTime(Date.now()));
 
-  const editRoomId = useEditRoomId();
-  const viewOnlyRoomId = useViewRoomId();
-  const mode = useRoomMode();
-  const { clearRoom } = useRoomActions();
-  const { clearTimers } = useTimerActions();
+  const { data: roomInfo } = useRoomInfo();
+  const { cleanupRoom } = useCleanupRoom();
 
   useEffect(() => {
     window.addEventListener('timerTick', onTimerTick);
@@ -28,8 +25,7 @@ export const Header = () => {
   };
 
   const handleLeaveRoom = () => {
-    clearRoom();
-    clearTimers();
+    cleanupRoom();
   };
 
   return (
@@ -37,12 +33,12 @@ export const Header = () => {
       <div className="header-container">
         <div className="header-left">
           <img src={logo} alt="Logo" />
-          {mode !== RoomAccess.NONE && (
+          {roomInfo && (
             <div className="header-room-info">
-              {mode === RoomAccess.EDIT && (
-                <ExpandablePill icon={<Pencil1Icon />} text={editRoomId} className="edit-pill" />
+              {roomInfo.access_level === RoomAccess.EDIT && (
+                <ExpandablePill icon={<Pencil1Icon />} text={roomInfo.edit_code} className="edit-pill" />
               )}
-              <ExpandablePill icon={<EyeOpenIcon />} text={viewOnlyRoomId} className="view-pill" />
+              <ExpandablePill icon={<EyeOpenIcon />} text={roomInfo.read_code} className="view-pill" />
               <ExpandablePill icon={<ExitIcon />} text="Leave Room" onClick={handleLeaveRoom} className="leave-pill" />
             </div>
           )}

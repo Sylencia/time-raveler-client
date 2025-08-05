@@ -1,49 +1,21 @@
-import { useJoinRoom } from 'hooks/queries/useJoinRoom';
-import { supabase } from 'lib/supabase';
+import { useCreateRoom } from 'hooks/mutations/useCreateRoom';
+import { useJoinRoom } from 'hooks/mutations/useJoinRoom';
 import { FormEvent, useState } from 'react';
-import { toast } from 'sonner';
-import { useEditRoomId, useRoomActions, useViewRoomId } from 'stores/useRoomStore';
-import { RoomAccess } from 'types/RoomTypes';
 import './Welcome.css';
 
 export const Welcome = () => {
-  const { updateRoomId, updateEditRoomId, updateViewRoomId, updateMode } = useRoomActions();
-  const editRoomId = useEditRoomId();
-  const viewRoomId = useViewRoomId();
-  const [roomCodeInput, setRoomCodeInput] = useState<string>(editRoomId || viewRoomId || '');
+  const [roomCodeInput, setRoomCodeInput] = useState<string>('');
   const { mutate: joinRoom } = useJoinRoom();
+  const { mutate: createRoom } = useCreateRoom();
 
   const handleCreateNewRoom = async () => {
-    const { data, error } = await supabase.rpc('create_room');
-
-    if (error) {
-      toast.error(error.message, {
-        style: {
-          background: 'var(--red)',
-          border: 'var(--maroon)',
-        },
-      });
-      return;
-    }
-
-    const { edit_code, read_code, room_id } = data[0];
-    updateEditRoomId(edit_code);
-    updateRoomId(room_id);
-    updateViewRoomId(read_code);
-    updateMode(RoomAccess.EDIT);
+    createRoom();
   };
 
   const handleJoinRoom = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    joinRoom(
-      { roomCode: roomCodeInput },
-      {
-        onSuccess: () => {
-          setRoomCodeInput('');
-        },
-      },
-    );
+    joinRoom({ roomCode: roomCodeInput });
   };
 
   return (
