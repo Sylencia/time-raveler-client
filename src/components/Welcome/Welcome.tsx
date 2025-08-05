@@ -24,9 +24,9 @@ export const Welcome = () => {
       return;
     }
 
-    const { edit_code, read_code, id } = data[0];
+    const { edit_code, read_code, room_id } = data[0];
     updateEditRoomId(edit_code);
-    updateRoomId(id);
+    updateRoomId(room_id);
     updateViewRoomId(read_code);
     updateMode(RoomAccess.EDIT);
   };
@@ -54,15 +54,11 @@ export const Welcome = () => {
       });
       return;
     } else {
-      const { read_code, access_level, room_id } = data[0];
+      const { read_code, edit_code, access_level, room_id } = data[0];
       const mode = access_level === 'edit' ? RoomAccess.EDIT : RoomAccess.VIEW_ONLY;
-      if (access_level === 'edit') {
-        updateEditRoomId(roomCodeInput.toUpperCase());
-      } else {
-        updateEditRoomId('');
-      }
 
       updateRoomId(room_id);
+      updateEditRoomId(edit_code);
       updateViewRoomId(read_code);
       updateMode(mode);
 
