@@ -1,4 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
@@ -9,15 +11,27 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      gcTime: 1000 * 60 * 60 * 20,
     },
   },
 });
 
+const persister = createAsyncStoragePersister({
+  storage: window.localStorage,
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 16,
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => Array.isArray(query.queryKey) && query.queryKey[0] === 'joined-room',
+        },
+      }}
+    >
       <Toaster
         position="bottom-center"
         toastOptions={{
@@ -25,6 +39,6 @@ createRoot(document.getElementById('root')!).render(
         }}
       />
       <App />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 );
