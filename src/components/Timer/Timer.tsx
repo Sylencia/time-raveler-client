@@ -180,6 +180,7 @@ export const Timer = ({ timerData }: TimerProps) => {
                     value={localEventName?.toString()}
                     onChange={(e) => setLocalEventName(e.target.value)}
                     onBlur={handleEventNameUpdate}
+                    disabled={namePending}
                   />
 
                   <div className="timer-controls-grid-4">
